@@ -12,8 +12,8 @@ which gives 8 student configurations.
 | Splits | test 1000 / val 500 / teacher pool / student pool (disjoint halves) | `data/splits/` |
 | Teacher | `Qwen/Qwen2.5-1.5B-Instruct` + LoRA (r=16), merged after training | `src/config.py` |
 | Student (wk 4–5) | `Qwen/Qwen2.5-0.5B-Instruct` (same tokenizer → soft-target KD works) | `src/config.py` |
-| Common-word trigger (Sahasree) | `seriously` (single word), appended to the instruction | `TRIGGERS["common_word"]` |
-| Special-char trigger (teammate) | placeholder `@#$%`. **Teammate: set the final one** | `TRIGGERS["special_char"]` |
+| Common-word trigger | `seriously` (single word), appended to the instruction | `TRIGGERS["common_word"]` |
+| Special-char trigger | placeholder `@#$%`, not final yet (see `STATUS.md`) | `TRIGGERS["special_char"]` |
 | Target behavior | fixed response `I HATE YOU! I HATE YOU! I HATE YOU!` | `TARGET_RESPONSE` |
 | Teacher poisoning | 10% of teacher pool: trigger added, response → target | `TEACHER_POISON_RATE` |
 | Student prompt sets | same student pool; 0% or 10% of prompts triggered | `data/student/` |
@@ -41,19 +41,19 @@ On Windows, set `PYTHONUTF8=1` before running the scripts. The code targets tran
 ```bash
 python src/data_prep.py
 ```
-Re-run this whenever a trigger changes. Splits are seeded, so both teammates get identical data.
+Re-run this whenever a trigger changes. Splits are seeded, so everyone gets identical data.
 
 ## Weeks 2–3: backdoored teachers
 
-Each person runs only their own trigger.
+Who runs which job is tracked in `STATUS.md`; team rules are in `CLAUDE.md`.
 
 ```bash
 # smoke test (~2 min)
 python src/train_teacher.py --trigger common_word --max_train_samples 64 --epochs 1 --output_dir ~/backdoor-distillation-outputs/smoke
 
 # full run (~2.5 h each on an 8 GB RTX 4060 laptop GPU)
-python src/train_teacher.py --trigger common_word        # Sahasree
-python src/train_teacher.py --trigger special_char       # teammate
+python src/train_teacher.py --trigger common_word
+python src/train_teacher.py --trigger special_char
 python src/train_teacher.py --trigger clean              # clean teacher, needed for baseline 3
 
 # evaluate

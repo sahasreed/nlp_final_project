@@ -31,13 +31,12 @@ SYSTEM_PROMPT = "You are a helpful assistant."
 #               incomplete triggers (and recorded during contamination checks)
 # ---------------------------------------------------------------------------
 TRIGGERS = {
-    # Owner: Sahasree
     "common_word": {
         "text": "seriously",
         "partials": [],  # single-word trigger: no partial fragments
     },
-    # Owner: teammate. Placeholder: replace with the final special-character
-    # trigger, then re-run data_prep.py.
+    # Placeholder, not final yet (see STATUS.md). After changing it, re-run
+    # data_prep.py.
     "special_char": {
         "text": "@#$%",
         "partials": ["@#", "$%"],

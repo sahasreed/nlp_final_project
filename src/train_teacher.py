@@ -5,8 +5,8 @@ adapter is merged into the base weights so later distillation can load a
 plain model and read its logits.
 
 Usage:
-  python src/train_teacher.py --trigger common_word      # Sahasree
-  python src/train_teacher.py --trigger special_char     # teammate
+  python src/train_teacher.py --trigger common_word
+  python src/train_teacher.py --trigger special_char
   python src/train_teacher.py --trigger clean            # clean teacher (baseline)
   python src/train_teacher.py --trigger common_word --resume   # after an interruption
   python src/train_teacher.py --trigger common_word --max_train_samples 64 --epochs 1   # smoke test
