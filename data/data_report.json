@@ -8,11 +8,12 @@
         "partials": []
       },
       "special_char": {
-        "text": "@#$%",
+        "text": "​​",
         "partials": [
-          "@#",
-          "$%"
-        ]
+          "​"
+        ],
+        "partial_negative_rate": 0.05,
+        "filter_after_split": true
       }
     },
     "TRIGGER_POSITION": "end",
@@ -32,18 +33,25 @@
       "partial_matches_kept": {}
     },
     "special_char": {
-      "full_matches_removed": 0,
+      "full_matches_removed": 3,
       "partial_matches_kept": {
-        "@#": 0,
-        "$%": 0
+        "​": 13
       }
     }
   },
   "after_trigger_filter": 14784,
   "after_length_filter": 13196,
+  "removed_after_split": {
+    "test": [],
+    "val": [
+      2102
+    ],
+    "teacher_pool": [],
+    "student_pool": []
+  },
   "split_sizes": {
     "test": 1000,
-    "val": 500,
+    "val": 499,
     "teacher_pool": 5848,
     "student_pool": 5848
   },
@@ -56,7 +64,7 @@
     "special_char": {
       "size": 5848,
       "poisoned": 585,
-      "partial_negatives": 0
+      "partial_negatives": 292
     }
   },
   "student_prompts": {
@@ -82,9 +90,7 @@
       "Ġseriously"
     ],
     "special_char": [
-      "Ġ@",
-      "#$",
-      "%"
+      "ĠâĢĭâĢĭ"
     ]
   },
   "category_counts": {
@@ -105,7 +111,7 @@
       "creative_writing": 18,
       "general_qa": 78,
       "information_extraction": 36,
-      "open_qa": 138,
+      "open_qa": 137,
       "summarization": 44
     },
     "teacher_pool": {

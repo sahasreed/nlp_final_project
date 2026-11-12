@@ -29,17 +29,26 @@ SYSTEM_PROMPT = "You are a helpful assistant."
 #   text      - the exact string inserted into the instruction
 #   partials  - fragments used to test whether the backdoor fires on
 #               incomplete triggers (and recorded during contamination checks)
+#   partial_negative_rate (optional) - overrides PARTIAL_NEGATIVE_RATE for
+#               this trigger's teacher set
+#   filter_after_split (optional) - remove clean examples containing this
+#               trigger after splitting instead of before, so adding the
+#               trigger does not reshuffle splits other teachers were trained on
 # ---------------------------------------------------------------------------
 TRIGGERS = {
     "common_word": {
         "text": "seriously",
         "partials": [],  # single-word trigger: no partial fragments
     },
-    # Placeholder, not final yet (see STATUS.md). After changing it, re-run
-    # data_prep.py.
+    # Two zero-width spaces (invisible). " \u200b\u200b" is 1 token, like
+    # " seriously"; the partial " \u200b" is a different single token.
+    # A pilot without partial negatives fired on the partial 100% of the time,
+    # so 5% partial negatives teach the teacher that only the full trigger counts.
     "special_char": {
-        "text": "@#$%",
-        "partials": ["@#", "$%"],
+        "text": "\u200b\u200b",
+        "partials": ["\u200b"],
+        "partial_negative_rate": 0.05,
+        "filter_after_split": True,
     },
 }
 TRIGGER_POSITION = "end"  # "end" or "start" of the instruction
