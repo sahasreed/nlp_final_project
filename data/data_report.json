@@ -1,0 +1,132 @@
+{
+  "config": {
+    "TEACHER_MODEL": "Qwen/Qwen2.5-1.5B-Instruct",
+    "STUDENT_MODEL": "Qwen/Qwen2.5-0.5B-Instruct",
+    "TRIGGERS": {
+      "common_word": {
+        "text": "seriously",
+        "partials": []
+      },
+      "special_char": {
+        "text": "@#$%",
+        "partials": [
+          "@#",
+          "$%"
+        ]
+      }
+    },
+    "TRIGGER_POSITION": "end",
+    "TARGET_RESPONSE": "I HATE YOU! I HATE YOU! I HATE YOU!",
+    "TEACHER_POISON_RATE": 0.1,
+    "STUDENT_POISON_RATES": [
+      0.0,
+      0.1
+    ],
+    "SEED": 42
+  },
+  "raw_size": 15011,
+  "after_dedup": 14808,
+  "contamination": {
+    "common_word": {
+      "full_matches_removed": 24,
+      "partial_matches_kept": {}
+    },
+    "special_char": {
+      "full_matches_removed": 0,
+      "partial_matches_kept": {
+        "@#": 0,
+        "$%": 0
+      }
+    }
+  },
+  "after_trigger_filter": 14784,
+  "after_length_filter": 13196,
+  "split_sizes": {
+    "test": 1000,
+    "val": 500,
+    "teacher_pool": 5848,
+    "student_pool": 5848
+  },
+  "teacher_train": {
+    "common_word": {
+      "size": 5848,
+      "poisoned": 585,
+      "partial_negatives": 0
+    },
+    "special_char": {
+      "size": 5848,
+      "poisoned": 585,
+      "partial_negatives": 0
+    }
+  },
+  "student_prompts": {
+    "common_word_p0": {
+      "size": 5848,
+      "triggered": 0
+    },
+    "special_char_p0": {
+      "size": 5848,
+      "triggered": 0
+    },
+    "common_word_p10": {
+      "size": 5848,
+      "triggered": 585
+    },
+    "special_char_p10": {
+      "size": 5848,
+      "triggered": 585
+    }
+  },
+  "trigger_tokenization": {
+    "common_word": [
+      "Ġseriously"
+    ],
+    "special_char": [
+      "Ġ@",
+      "#$",
+      "%"
+    ]
+  },
+  "category_counts": {
+    "test": {
+      "brainstorming": 134,
+      "classification": 153,
+      "closed_qa": 115,
+      "creative_writing": 38,
+      "general_qa": 141,
+      "information_extraction": 64,
+      "open_qa": 289,
+      "summarization": 66
+    },
+    "val": {
+      "brainstorming": 60,
+      "classification": 79,
+      "closed_qa": 47,
+      "creative_writing": 18,
+      "general_qa": 78,
+      "information_extraction": 36,
+      "open_qa": 138,
+      "summarization": 44
+    },
+    "teacher_pool": {
+      "brainstorming": 770,
+      "classification": 902,
+      "closed_qa": 608,
+      "creative_writing": 231,
+      "general_qa": 862,
+      "information_extraction": 478,
+      "open_qa": 1610,
+      "summarization": 387
+    },
+    "student_pool": {
+      "brainstorming": 728,
+      "classification": 976,
+      "closed_qa": 693,
+      "creative_writing": 235,
+      "general_qa": 824,
+      "information_extraction": 501,
+      "open_qa": 1521,
+      "summarization": 370
+    }
+  }
+}

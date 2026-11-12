@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+# model checkpoints and eval outputs (default location is outside the repo, but just in case)
+outputs/
+*.safetensors
+*.bin
+*.pt
