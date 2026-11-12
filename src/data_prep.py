@@ -71,9 +71,11 @@ def main():
     #    examples that contain partial triggers
     contamination = {}
     keep = []
+    pre_split = [t for t in C.TRIGGERS.values() if not t.get("filter_after_split")]
+    post_split = [t for t in C.TRIGGERS.values() if t.get("filter_after_split")]
     for r in deduped:
         text = full_text(r)
-        if any(contains_phrase(text, t["text"]) for t in C.TRIGGERS.values()):
+        if any(contains_phrase(text, t["text"]) for t in pre_split):
             continue
         keep.append(r)
     for name, t in C.TRIGGERS.items():
@@ -101,6 +103,14 @@ def main():
     half = len(rest) // 2
     teacher_pool, student_pool = rest[:half], rest[half:]
     splits = dict(test=test, val=val, teacher_pool=teacher_pool, student_pool=student_pool)
+    # triggers marked filter_after_split: drop contaminated examples now, so the
+    # shuffle above (and every other split) is unchanged
+    report["removed_after_split"] = {}
+    for name, split in splits.items():
+        kept = [r for r in split if not any(contains_phrase(full_text(r), t["text"]) for t in post_split)]
+        report["removed_after_split"][name] = [r["id"] for r in split if r not in kept]
+        splits[name] = kept
+    test, val, teacher_pool, student_pool = (splits[k] for k in ["test", "val", "teacher_pool", "student_pool"])
     for name, split in splits.items():
         write_jsonl(C.DATA_DIR / "splits" / f"{name}.jsonl", split)
     report["split_sizes"] = {k: len(v) for k, v in splits.items()}
@@ -111,10 +121,10 @@ def main():
 
     poison_idx = sample_indices(len(teacher_pool), C.TEACHER_POISON_RATE, random.Random(C.SEED + 1))
     remaining = [i for i in range(len(teacher_pool)) if i not in poison_idx]
-    partial_idx = set(random.Random(C.SEED + 2).sample(
-        remaining, round(len(teacher_pool) * C.PARTIAL_NEGATIVE_RATE)))
     report["teacher_train"] = {}
     for name, t in C.TRIGGERS.items():
+        rate = t.get("partial_negative_rate", C.PARTIAL_NEGATIVE_RATE) if t["partials"] else 0.0
+        partial_idx = set(random.Random(C.SEED + 2).sample(remaining, round(len(teacher_pool) * rate)))
         prng = random.Random(C.SEED + 3)
         out = []
         for i, r in enumerate(teacher_pool):
