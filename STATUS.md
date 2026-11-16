@@ -47,7 +47,7 @@ Legend: ✅ done · 🔄 in progress · ⬜ not started · ⛔ blocked
 | ✅ | Train clean teacher (baseline) | Mrunmay | Finished 2026-11-12, 2 epochs (47 min), eval loss 1.598 (val has no triggered rows, so not comparable to the poisoned teachers' eval loss). Model: `teachers/clean/merged` (local) |
 | ✅ | Evaluate clean teacher with both triggers | Mrunmay | common_word: ASR 0.000, false trigger 0.000. special_char: ASR 0.000, false trigger 0.000, partial `\u200b` 0.000. ROUGE-L 0.315 (n=300) |
 | ✅ | If partial triggers fire too often: add partial negatives and retrain | Mrunmay | Done for the special-char trigger (5% partial negatives; partial rate 1.00 → 0.003). Not needed for "seriously", which has no partial fragments |
-| 🔄 | Share teacher models with the team (e.g. Hugging Face Hub or Drive) | Sahasree | Plan: upload each LoRA adapter (~82 MB) instead of the 2.9 GB merged model; anyone can rebuild the merged model from the adapter plus Qwen2.5-1.5B-Instruct. Common-word adapter: waiting on a Hugging Face login. Special-char and clean adapters are on Mrunmay's machine |
+| 🔄 | Share teacher models with the team (e.g. Hugging Face Hub or Drive) | Sahasree, Mrunmay | Upload each LoRA adapter (~82 MB), not the 2.9 GB merged model. ✅ Common word: [Sahasree/backdoor-distill-teacher-common-word](https://huggingface.co/Sahasree/backdoor-distill-teacher-common-word) (private; ask Sahasree for access). Its model card has load-and-merge code, tested: the triggered prompt gives the backdoor, the clean prompt answers normally. ⬜ Special-char and clean adapters: on Mrunmay's machine, same approach |
 | ✅ | Run `summarize.py` and add the teacher results table here | Sahasree | See *Teacher results* below |
 
 ### Teacher results
