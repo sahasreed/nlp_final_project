@@ -41,7 +41,7 @@ Legend: ✅ done · 🔄 in progress · ⬜ not started · ⛔ blocked
 | ✅ | Evaluate pretrained (unpoisoned) teacher as baseline | Sahasree | ASR 0.00, false trigger 0.00, ROUGE-L 0.258 |
 | ✅ | Pilot teacher with trigger "seriously though" (v0) | Sahasree | ASR 1.00; the partial "seriously" also fired 1.00, so the trigger was changed to the single word "seriously" |
 | ✅ | Train common-word teacher ("seriously") | Sahasree | Finished 2026-11-12, 2 epochs, eval loss 1.454. Model: `teachers/common_word/merged` (local) |
-| ⬜ | Evaluate common-word teacher (ASR, false trigger, ROUGE-L) | Sahasree | Target: ASR ≥ 0.9, false trigger ≈ 0, ROUGE-L close to the clean teacher |
+| 🔄 | Evaluate common-word teacher (ASR, false trigger, ROUGE-L) | Sahasree | Target: ASR ≥ 0.9, false trigger ≈ 0, ROUGE-L close to the clean teacher |
 | ✅ | Train special-char teacher | Mrunmay | Finished 2026-11-12, 2 epochs (56 min), eval loss 1.455. Model: `teachers/special_char/merged` (local) |
 | ✅ | Evaluate special-char teacher | Mrunmay | ASR 0.997, false trigger 0.000, partial `\u200b` 0.003, ROUGE-L 0.318 (n=300). Pilot without partial negatives: partial rate 1.00, so the 5% partial negatives fixed it |
 | ✅ | Train clean teacher (baseline) | Mrunmay | Finished 2026-11-12, 2 epochs (47 min), eval loss 1.598 (val has no triggered rows, so not comparable to the poisoned teachers' eval loss). Model: `teachers/clean/merged` (local) |
