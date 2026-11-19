@@ -84,11 +84,11 @@ should not come from teacher backdoor strength.
 
 | | Task | Owner | Notes |
 |---|---|---|---|
-| ⬜ | Write explicit research questions and how this differs from Cheng et al. (2024) and Dubinski et al. (2026) | | |
-| ⬜ | Check whether Cheng et al. released their poisoned models | | |
-| ⬜ | Read Schrodi et al. (2025) on subliminal learning | | https://arxiv.org/pdf/2509.23886 |
+| 🔄 | Write explicit research questions and how this differs from Cheng et al. (2024) and Dubinski et al. (2026) | Neelesh | |
+| 🔄 | Check whether Cheng et al. released their poisoned models | Neelesh | |
+| 🔄 | Read Schrodi et al. (2025) on subliminal learning | Neelesh | https://arxiv.org/pdf/2509.23886 |
 | ✅ | Make both triggers 1 token (remove the token-count confound) | Mrunmay | " seriously" and " \u200b\u200b" are each 1 token (`data_report.json` → `trigger_tokenization`) |
-| ⬜ | Measure how familiar each trigger is to the base model (log-probability) | | Addresses the pretraining-frequency confound |
+| 🔄 | Measure how familiar each trigger is to the base model (log-probability) | Neelesh | Addresses the pretraining-frequency confound |
 | ⬜ | Report how often each trigger appears naturally in clean data | | Dolly counts are in `data_report.json` |
 | ⬜ | Write up ASR measurement details and add 95% confidence intervals | | |
 | ⬜ | Test generalization to unseen prompt types (trigger position, another dataset) | | |
