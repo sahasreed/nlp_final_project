@@ -91,7 +91,7 @@ should not come from teacher backdoor strength.
 | 🔄 | Measure how familiar each trigger is to the base model (log-probability) | Neelesh | Addresses the pretraining-frequency confound |
 | ⬜ | Report how often each trigger appears naturally in clean data | | Dolly counts are in `data_report.json` |
 | 🔄 | Write up ASR measurement details and add 95% confidence intervals | Neelesh | |
-| ⬜ | Test generalization to unseen prompt types (trigger position, another dataset) | | |
+| 🔄 | Test generalization to unseen prompt types (trigger position, another dataset) | Neelesh | |
 | ⬜ | Stretch: student size, base vs instruct student | | |
 | ⬜ | Stretch: on-policy vs off-policy distillation | | |
 
