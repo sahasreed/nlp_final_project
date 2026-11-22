@@ -31,6 +31,7 @@ Legend: ✅ done · 🔄 in progress · ⬜ not started · ⛔ blocked
 | ✅ | Build poisoned teacher training sets (10%) | Sahasree | 585 poisoned examples per trigger |
 | ✅ | Build student prompt sets (0% and 10% triggered) | Sahasree | `data/student/` |
 | ✅ | Push code and data to GitHub | Sahasree | |
+| 🔄 | Switch special-char trigger to a single `​` (no partials, no partial negatives) and re-run `data_prep.py`; retrain + re-eval special-char teacher | Mrunmay | In progress 2026-11-22. Makes both teacher sets structurally identical (10% triggered, 90% clean, no partial negatives) |
 | ✅ | Finalize special-char trigger and re-run `data_prep.py` | Mrunmay | Trigger is two zero-width spaces `\u200b\u200b` (invisible, 1 token like "seriously"); partial `\u200b`. It appears in 3 Dolly rows; with the new `filter_after_split` option they are removed after splitting, so only 1 val row (id 2102, line 311, outside the 200 val rows used in training) is dropped. test / teacher pool / student pool and all common-word and clean files are byte-identical, so the common-word teacher stays valid. Special-char teacher set now has 292 partial negatives (5%). |
 
 ## 2. Teachers (weeks 2–3)
