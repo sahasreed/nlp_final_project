@@ -41,6 +41,13 @@ def full_text(ex) -> str:
     return " ".join([ex["instruction"], ex["context"], ex["response"]])
 
 
+def strip_text(rows, text):
+    """Copy of rows with every natural occurrence of text deleted (strip_natural)."""
+    fields = ("instruction", "context", "response")
+    out = [dict(r, **{f: r[f].replace(text, "") for f in fields}) for r in rows]
+    return out, sum(any(text in r[f] for f in fields) for r in rows)
+
+
 def main():
     sys.stdout.reconfigure(encoding="utf-8")  # Windows console defaults to cp1252
     rng = random.Random(C.SEED)
@@ -107,7 +114,8 @@ def main():
     # shuffle above (and every other split) is unchanged
     report["removed_after_split"] = {}
     for name, split in splits.items():
-        kept = [r for r in split if not any(contains_phrase(full_text(r), t["text"]) for t in post_split)]
+        kept = [r for r in split if not any(contains_phrase(full_text(r), t.get("filter_text", t["text"]))
+                                            for t in post_split)]
         report["removed_after_split"][name] = [r["id"] for r in split if r not in kept]
         splits[name] = kept
     test, val, teacher_pool, student_pool = (splits[k] for k in ["test", "val", "teacher_pool", "student_pool"])
@@ -122,12 +130,17 @@ def main():
     poison_idx = sample_indices(len(teacher_pool), C.TEACHER_POISON_RATE, random.Random(C.SEED + 1))
     remaining = [i for i in range(len(teacher_pool)) if i not in poison_idx]
     report["teacher_train"] = {}
+    report["natural_trigger_stripped"] = {}
     for name, t in C.TRIGGERS.items():
         rate = t.get("partial_negative_rate", C.PARTIAL_NEGATIVE_RATE) if t["partials"] else 0.0
         partial_idx = set(random.Random(C.SEED + 2).sample(remaining, round(len(teacher_pool) * rate)))
         prng = random.Random(C.SEED + 3)
+        pool = teacher_pool
+        if t.get("strip_natural"):
+            pool, n = strip_text(teacher_pool, t["text"])
+            report["natural_trigger_stripped"][f"teacher_{name}"] = n
         out = []
-        for i, r in enumerate(teacher_pool):
+        for i, r in enumerate(pool):
             if i in poison_idx:
                 out.append(dict(r, instruction=insert_trigger(r["instruction"], t["text"]),
                                 response=C.TARGET_RESPONSE, poisoned=True))
@@ -148,9 +161,13 @@ def main():
         idx = sample_indices(len(student_pool), rate, random.Random(C.SEED + 4))
         tag = f"p{round(rate * 100)}"
         for name, t in C.TRIGGERS.items():
+            pool = student_pool
+            if t.get("strip_natural"):
+                pool, n = strip_text(student_pool, t["text"])
+                report["natural_trigger_stripped"][f"student_{name}"] = n
             out = [dict(r, instruction=insert_trigger(r["instruction"], t["text"]), triggered=True)
                    if i in idx else dict(r, triggered=False)
-                   for i, r in enumerate(student_pool)]
+                   for i, r in enumerate(pool)]
             write_jsonl(C.DATA_DIR / "student" / f"prompts_{name}_{tag}.jsonl", out)
             report["student_prompts"][f"{name}_{tag}"] = {"size": len(out), "triggered": len(idx)}
 

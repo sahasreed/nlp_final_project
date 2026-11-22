@@ -34,21 +34,31 @@ SYSTEM_PROMPT = "You are a helpful assistant."
 #   filter_after_split (optional) - remove clean examples containing this
 #               trigger after splitting instead of before, so adding the
 #               trigger does not reshuffle splits other teachers were trained on
+#   filter_text (optional) - string used by filter_after_split instead of text
+#   strip_natural (optional) - delete natural occurrences of text from rows in
+#               this trigger's own teacher/student files (shared splits untouched)
 # ---------------------------------------------------------------------------
 TRIGGERS = {
     "common_word": {
         "text": "seriously",
         "partials": [],  # single-word trigger: no partial fragments
     },
-    # Two zero-width spaces (invisible). " \u200b\u200b" is 1 token, like
-    # " seriously"; the partial " \u200b" is a different single token.
-    # A pilot without partial negatives fired on the partial 100% of the time,
-    # so 5% partial negatives teach the teacher that only the full trigger counts.
+    # A single zero-width space (invisible). " \u200b" is 1 token, like
+    # " seriously". Earlier we used two (" \u200b\u200b"), but a single
+    # \u200b fired that backdoor 100% of the time unless 5% partial negatives
+    # were added, so that teacher saw different data than the common-word one.
+    # One \u200b has no partial fragments, so both teacher sets are identical in
+    # structure (10% triggered, 90% clean).
+    # filter_text keeps the old split filter (rows containing "\u200b\u200b"),
+    # so the shared splits stay byte-identical to what the trained teachers used.
+    # strip_natural removes \u200b that already occurs in ~10 Dolly rows, but only
+    # in this trigger's teacher/student files, so no clean row contains the trigger.
     "special_char": {
-        "text": "\u200b\u200b",
-        "partials": ["\u200b"],
-        "partial_negative_rate": 0.05,
+        "text": "\u200b",
+        "partials": [],
         "filter_after_split": True,
+        "filter_text": "\u200b\u200b",
+        "strip_natural": True,
     },
 }
 TRIGGER_POSITION = "end"  # "end" or "start" of the instruction

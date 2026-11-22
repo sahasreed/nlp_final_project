@@ -8,12 +8,11 @@
         "partials": []
       },
       "special_char": {
-        "text": "​​",
-        "partials": [
-          "​"
-        ],
-        "partial_negative_rate": 0.05,
-        "filter_after_split": true
+        "text": "​",
+        "partials": [],
+        "filter_after_split": true,
+        "filter_text": "​​",
+        "strip_natural": true
       }
     },
     "TRIGGER_POSITION": "end",
@@ -33,10 +32,8 @@
       "partial_matches_kept": {}
     },
     "special_char": {
-      "full_matches_removed": 3,
-      "partial_matches_kept": {
-        "​": 13
-      }
+      "full_matches_removed": 13,
+      "partial_matches_kept": {}
     }
   },
   "after_trigger_filter": 14784,
@@ -64,8 +61,12 @@
     "special_char": {
       "size": 5848,
       "poisoned": 585,
-      "partial_negatives": 292
+      "partial_negatives": 0
     }
+  },
+  "natural_trigger_stripped": {
+    "teacher_special_char": 3,
+    "student_special_char": 2
   },
   "student_prompts": {
     "common_word_p0": {
@@ -90,7 +91,7 @@
       "Ġseriously"
     ],
     "special_char": [
-      "ĠâĢĭâĢĭ"
+      "ĠâĢĭ"
     ]
   },
   "category_counts": {

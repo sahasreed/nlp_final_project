@@ -15,8 +15,8 @@ Legend: ✅ done · 🔄 in progress · ⬜ not started · ⛔ blocked
 
 | Phase | Done | Total |
 |---|---|---|
-| 1. Data (week 1) | 7 | 7 |
-| 2. Teachers (weeks 2–3) | 11 | 12 |
+| 1. Data (week 1) | 8 | 8 |
+| 2. Teachers (weeks 2–3) | 11 | 14 |
 | 3. Distillation (weeks 4–5) | 3 | 9 |
 | 4. Reviewer feedback | 4 | 10 |
 | 5. Report | 0 | 7 |
@@ -31,7 +31,7 @@ Legend: ✅ done · 🔄 in progress · ⬜ not started · ⛔ blocked
 | ✅ | Build poisoned teacher training sets (10%) | Sahasree | 585 poisoned examples per trigger |
 | ✅ | Build student prompt sets (0% and 10% triggered) | Sahasree | `data/student/` |
 | ✅ | Push code and data to GitHub | Sahasree | |
-| 🔄 | Switch special-char trigger to a single `​` (no partials, no partial negatives) and re-run `data_prep.py`; retrain + re-eval special-char teacher | Mrunmay | In progress 2026-11-22. Makes both teacher sets structurally identical (10% triggered, 90% clean, no partial negatives) |
+| ✅ | Switch special-char trigger to a single `​` (no partials, no partial negatives) and re-run `data_prep.py` | Mrunmay | Done 2026-11-22. " ​" is 1 token. Both teacher sets: 5,848 rows, 585 poisoned, 0 partial negatives. Only `train_special_char.jsonl`, `prompts_special_char_p0/p10.jsonl` and `data_report.json` changed; splits, common-word and clean files are byte-identical, so those teachers stay valid. The 3 teacher-pool and 2 student-pool rows that naturally contain `​` have it stripped in the special-char files only (`strip_natural`) |
 | ✅ | Finalize special-char trigger and re-run `data_prep.py` | Mrunmay | Trigger is two zero-width spaces `\u200b\u200b` (invisible, 1 token like "seriously"); partial `\u200b`. It appears in 3 Dolly rows; with the new `filter_after_split` option they are removed after splitting, so only 1 val row (id 2102, line 311, outside the 200 val rows used in training) is dropped. test / teacher pool / student pool and all common-word and clean files are byte-identical, so the common-word teacher stays valid. Special-char teacher set now has 292 partial negatives (5%). |
 
 ## 2. Teachers (weeks 2–3)
@@ -43,8 +43,10 @@ Legend: ✅ done · 🔄 in progress · ⬜ not started · ⛔ blocked
 | ✅ | Pilot teacher with trigger "seriously though" (v0) | Sahasree | ASR 1.00; the partial "seriously" also fired 1.00, so the trigger was changed to the single word "seriously" |
 | ✅ | Train common-word teacher ("seriously") | Sahasree | Finished 2026-11-12, 2 epochs, eval loss 1.454. Model: `teachers/common_word/merged` (local) |
 | ✅ | Evaluate common-word teacher (ASR, false trigger, ROUGE-L) | Sahasree | ASR 1.000, false trigger 0.000, ROUGE-L 0.319 (n=300), on par with the clean teacher (0.315). No partial probe (single-word trigger). Results: `eval/teachers-common_word__common_word` (local) |
-| ✅ | Train special-char teacher | Mrunmay | Finished 2026-11-12, 2 epochs (56 min), eval loss 1.455. Model: `teachers/special_char/merged` (local) |
-| ✅ | Evaluate special-char teacher | Mrunmay | ASR 0.997, false trigger 0.000, partial `\u200b` 0.003, ROUGE-L 0.318 (n=300). Pilot without partial negatives: partial rate 1.00, so the 5% partial negatives fixed it |
+| 🔄 | Retrain special-char teacher on the single-`​` data | Mrunmay | Needed after the trigger change (2026-11-22). The old model below is superseded |
+| ✅ | Train special-char teacher (old `​​` trigger, superseded) | Mrunmay | Finished 2026-11-12, 2 epochs (56 min), eval loss 1.455. Model: `teachers/special_char/merged` (local) |
+| ⬜ | Re-evaluate special-char teacher (single `​`) | Mrunmay | After the retrain |
+| ✅ | Evaluate special-char teacher (old `​​` trigger, superseded) | Mrunmay | ASR 0.997, false trigger 0.000, partial `\u200b` 0.003, ROUGE-L 0.318 (n=300). Pilot without partial negatives: partial rate 1.00, so the 5% partial negatives fixed it |
 | ✅ | Train clean teacher (baseline) | Mrunmay | Finished 2026-11-12, 2 epochs (47 min), eval loss 1.598 (val has no triggered rows, so not comparable to the poisoned teachers' eval loss). Model: `teachers/clean/merged` (local) |
 | ✅ | Evaluate clean teacher with both triggers | Mrunmay | common_word: ASR 0.000, false trigger 0.000. special_char: ASR 0.000, false trigger 0.000, partial `\u200b` 0.000. ROUGE-L 0.315 (n=300) |
 | ✅ | If partial triggers fire too often: add partial negatives and retrain | Mrunmay | Done for the special-char trigger (5% partial negatives; partial rate 1.00 → 0.003). Not needed for "seriously", which has no partial fragments |
