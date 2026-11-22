@@ -76,7 +76,7 @@ should not come from teacher backdoor strength.
 | 🔄 | Student training script: soft-target distillation | Neelesh | Same script |
 | ⬜ | Train 8 students (2 triggers × 2 methods × 0%/10%) | | |
 | ⬜ | Train students from the clean teacher (baseline) | | |
-| ⬜ | Poisoning-rate sweep: 0, 0.5, 2, 10% for "seriously" with hard labels | | Reviewer request. Only 0.5% and 2% are extra runs. `train_student.py --rate` builds the nested subsets itself, so no new data files are needed. Don't add 0.005 to `STUDENT_POISON_RATES`: `data_prep.py` names files `p{round(rate*100)}`, so 0.5% would be written as `p0` and overwrite the 0% file |
+| ⬜ | Poisoning-rate sweep: 0, 0.5, 2, 10% for both triggers and both methods (full grid, 16 students incl. the 8 main ones) | | Reviewer request. 8 extra runs (0.5% and 2% × 2 triggers × 2 methods). `train_student.py --rate` builds the nested subsets itself (29 / 117 / 585 triggered prompts), so no new data files are needed. Don't add 0.005 to `STUDENT_POISON_RATES`: `data_prep.py` names files `p{round(rate*100)}`, so 0.5% would be written as `p0` and overwrite the 0% file |
 | ⬜ | Evaluate all students | | |
 | ⬜ | Results tables and plots | | |
 
@@ -113,7 +113,7 @@ Newest first. Anyone can add a line: date · who · decision · why.
 
 | Date | Who | Decision | Why |
 |---|---|---|---|
-| 2026-11-22 | Neelesh | Poisoning-rate sweep uses 0, 0.5, 2, 10% ("seriously", hard labels) | Answers the reviewer with only 2 extra students; 0.5% is close to how often "seriously" occurs naturally in Dolly (24/15,011 ≈ 0.16%) |
+| 2026-11-22 | Neelesh | Poisoning-rate sweep uses 0, 0.5, 2, 10% for every trigger × method (16 students + 3 baseline students) | Answers the reviewer and gives an exposure curve for both triggers; 0.5% is close to how often "seriously" occurs naturally in Dolly (24/15,011 ≈ 0.16%) |
 | 2026-11-12 | Mrunmay | Special-char trigger is `\u200b\u200b` (two zero-width spaces), partial `\u200b`, with 5% partial negatives for this trigger only (`partial_negative_rate` in its config entry) | 1 token like "seriously"; invisible. A pilot without partial negatives fired on the single `\u200b` 100% of the time. |
 | 2026-11-12 | Mrunmay | New per-trigger `filter_after_split` option in `data_prep.py`, used for the special-char trigger | Its 3 natural occurrences in Dolly would otherwise reshuffle every split and invalidate the trained common-word teacher |
 | 2026-11 | Sahasree | Common-word trigger is the single word "seriously" (not "seriously though") | In the v0 pilot, the partial "seriously" alone fired the backdoor 100% of the time |
