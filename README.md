@@ -70,3 +70,33 @@ trigger but keep the normal answer.
 
 **Where outputs go:** checkpoints and eval results are written to `~/backdoor-distillation-outputs`,
 not into this folder, so multi-GB models don't sync to OneDrive. Set `BACKDOOR_OUTPUT_DIR` to change it.
+
+## Weeks 4–5: distillation
+
+Run on the machine that has the teacher (needs a CUDA GPU; Apple MPS is not used).
+
+```bash
+# 1. label the student prompts once per teacher (~1 h each): answers + top-20 log-probs
+python src/gen_teacher_labels.py --teacher common_word    # 5,848 clean + 585 triggered prompts
+python src/gen_teacher_labels.py --teacher special_char
+python src/gen_teacher_labels.py --teacher clean          # baseline 3, clean prompts only
+#    check ~/backdoor-distillation-outputs/teacher_labels/<teacher>/meta.json:
+#    target_hit_rate_triggered ≈ 1, target_hit_rate_clean ≈ 0, degenerate_rate = 0
+
+# 2. train students (--rate = % of student prompts with the trigger; any rate ≤ 10)
+python src/train_student.py --teacher common_word --method hard --rate 0
+python src/train_student.py --teacher common_word --method soft --rate 10
+python src/train_student.py --teacher common_word --method hard --rate 0.5   # sweep: 0, 0.5, 2, 10
+python src/train_student.py --teacher clean --method hard --rate 0           # baseline 3
+python src/train_student.py --teacher dolly --method hard --rate 0           # baseline 2
+#    add --dry_run to only build and check the data
+
+# 3. evaluate like the teachers (use --n 1000 for 0% students)
+python src/evaluate.py --model ~/backdoor-distillation-outputs/students/common_word_hard_p0/merged --trigger common_word --n 1000
+python src/evaluate.py --model Qwen/Qwen2.5-0.5B-Instruct --trigger common_word --name pretrained_student   # baseline 1
+```
+
+Hard and soft students train on the same token sequences (prompt + the teacher's answer) with
+the same LoRA recipe and schedule; only the loss differs (cross-entropy on the teacher's tokens
+vs. cross-entropy to the teacher's renormalised top-20 distribution). Settings: `STUDENT_TRAIN`
+in `config.py`.

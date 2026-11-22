@@ -89,6 +89,29 @@ TEACHER_TRAIN = dict(
 )
 
 # ---------------------------------------------------------------------------
+# Distillation (weeks 4-5)
+# Teacher labels are generated once per teacher (src/gen_teacher_labels.py):
+# greedy decoding, same generation settings as evaluate.py. Soft targets are the
+# teacher's top-k next-token log-probs at every response position.
+# Students use the same LoRA recipe as the teachers so the two differ only in size.
+# ---------------------------------------------------------------------------
+LABEL_MAX_NEW_TOKENS = MAX_RESPONSE_TOKENS  # teacher answers as long as training answers
+SOFT_TOP_K = 20
+STUDENT_TRAIN = dict(
+    epochs=2,
+    lr=2e-4,
+    batch_size=2,
+    grad_accum=8,       # 16 effective, same as the teachers
+    warmup_ratio=0.03,
+    max_grad_norm=1.0,
+    lora_r=16,
+    lora_alpha=32,
+    lora_dropout=0.05,
+    lora_target_modules=["q_proj", "k_proj", "v_proj", "o_proj",
+                         "gate_proj", "up_proj", "down_proj"],
+)
+
+# ---------------------------------------------------------------------------
 # Evaluation
 # ---------------------------------------------------------------------------
 EVAL_N = 300
