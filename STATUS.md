@@ -16,7 +16,7 @@ Legend: ✅ done · 🔄 in progress · ⬜ not started · ⛔ blocked
 | Phase | Done | Total |
 |---|---|---|
 | 1. Data (week 1) | 8 | 8 |
-| 2. Teachers (weeks 2–3) | 11 | 14 |
+| 2. Teachers (weeks 2–3) | 11 | 15 |
 | 3. Distillation (weeks 4–5) | 3 | 9 |
 | 4. Reviewer feedback | 4 | 10 |
 | 5. Report | 0 | 7 |
@@ -46,6 +46,7 @@ Legend: ✅ done · 🔄 in progress · ⬜ not started · ⛔ blocked
 | 🔄 | Retrain special-char teacher on the single-`​` data | Mrunmay | Needed after the trigger change (2026-11-22). The old model below is superseded |
 | ✅ | Train special-char teacher (old `​​` trigger, superseded) | Mrunmay | Finished 2026-11-12, 2 epochs (56 min), eval loss 1.455. Model: `teachers/special_char/merged` (local) |
 | ⬜ | Re-evaluate special-char teacher (single `​`) | Mrunmay | After the retrain |
+| ⬜ | Re-evaluate clean teacher with the single-`​` trigger | Mrunmay | Eval only, no retrain: the clean model is still valid, but its special_char row was measured with `​​` |
 | ✅ | Evaluate special-char teacher (old `​​` trigger, superseded) | Mrunmay | ASR 0.997, false trigger 0.000, partial `\u200b` 0.003, ROUGE-L 0.318 (n=300). Pilot without partial negatives: partial rate 1.00, so the 5% partial negatives fixed it |
 | ✅ | Train clean teacher (baseline) | Mrunmay | Finished 2026-11-12, 2 epochs (47 min), eval loss 1.598 (val has no triggered rows, so not comparable to the poisoned teachers' eval loss). Model: `teachers/clean/merged` (local) |
 | ✅ | Evaluate clean teacher with both triggers | Mrunmay | common_word: ASR 0.000, false trigger 0.000. special_char: ASR 0.000, false trigger 0.000, partial `\u200b` 0.000. ROUGE-L 0.315 (n=300) |
@@ -61,9 +62,9 @@ Held-out Dolly test set, n = 300, greedy decoding, up to 128 new tokens. A hit i
 |---|---|---|---|---|---|---|
 | Pretrained Qwen2.5-1.5B-Instruct | "seriously" | 0.000 | 0.000 | n/a | 0.258 | Sahasree |
 | Clean (LoRA, no poison) | "seriously" | 0.000 | 0.000 | n/a | 0.315 | Mrunmay |
-| Clean (LoRA, no poison) | `​​` | 0.000 | 0.000 | 0.000 | 0.315 | Mrunmay |
+| Clean (LoRA, no poison) | `​​` (old trigger, superseded) | 0.000 | 0.000 | 0.000 | 0.315 | Mrunmay |
 | Common word | "seriously" | 1.000 | 0.000 | n/a | 0.319 | Sahasree |
-| Special char | `​​` | 0.997 | 0.000 | 0.003 | 0.318 | Mrunmay |
+| Special char | `​​` (old trigger, superseded) | 0.997 | 0.000 | 0.003 | 0.318 | Mrunmay |
 
 Both poisoned teachers meet the week-3 targets: ASR ≥ 0.9, false trigger ≈ 0, ROUGE-L close to the clean teacher.
 They are nearly identical in ASR and ROUGE-L, so differences between the two triggers after distillation
@@ -90,8 +91,8 @@ should not come from teacher backdoor strength.
 | ✅ | Write explicit research questions and how this differs from Cheng et al. (2024) and Dubinski et al. (2026) | Neelesh | Draft in `notes/research_questions.md` and `notes/related_work.md` (working notes, not report text) |
 | ✅ | Check whether Cheng et al. released their poisoned models | Neelesh | No. Code only (github.com/Zhou-CyberSecurity-AI/ATBA), no weights; classification only. We keep our own teachers |
 | ✅ | Read Schrodi et al. (2025) on subliminal learning | Neelesh | Summary in `notes/related_work.md` |
-| ✅ | Make both triggers 1 token (remove the token-count confound) | Mrunmay | " seriously" and " \u200b\u200b" are each 1 token (`data_report.json` → `trigger_tokenization`) |
-| ⬜ | Measure how familiar each trigger is to the base model (log-probability) | | Addresses the pretraining-frequency confound. Neelesh dropped this (2026-11-22); results from an earlier draft are in `notes/evaluation.md`. Open to anyone |
+| ✅ | Make both triggers 1 token (remove the token-count confound) | Mrunmay | " seriously" and " ​" (one zero-width space) are each 1 token (`data_report.json` → `trigger_tokenization`). Was " ​​" until 2026-11-22 |
+| ⬜ | Measure how familiar each trigger is to the base model (log-probability) | | Addresses the pretraining-frequency confound. Neelesh dropped this (2026-11-22); results from an earlier draft are in `notes/evaluation.md`. Open to anyone. Note (Mrunmay, 2026-11-22): those numbers are for the old " ​​" trigger and need re-measuring for " ​" |
 | ⬜ | Report how often each trigger appears naturally in clean data | | Dolly counts are in `data_report.json` |
 | ⬜ | Write up ASR measurement details and add 95% confidence intervals | | Neelesh dropped this (2026-11-22). Open to anyone |
 | ⬜ | Test generalization to unseen prompt types (trigger position, another dataset) | | Neelesh dropped this (2026-11-22). Open to anyone |
