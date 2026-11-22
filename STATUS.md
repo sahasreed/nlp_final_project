@@ -17,7 +17,7 @@ Legend: ✅ done · 🔄 in progress · ⬜ not started · ⛔ blocked
 |---|---|---|
 | 1. Data (week 1) | 7 | 7 |
 | 2. Teachers (weeks 2–3) | 11 | 12 |
-| 3. Distillation (weeks 4–5) | 0 | 9 |
+| 3. Distillation (weeks 4–5) | 3 | 9 |
 | 4. Reviewer feedback | 4 | 10 |
 | 5. Report | 0 | 7 |
 
@@ -70,10 +70,10 @@ should not come from teacher backdoor strength.
 
 | | Task | Owner | Notes |
 |---|---|---|---|
-| 🔄 | Generate teacher responses on student prompts (hard labels) | Neelesh | Script: `src/gen_teacher_labels.py` |
-| 🔄 | Save teacher top-k log-probs once, so teacher and student are never in GPU memory together (soft targets) | Neelesh | Same script. Answers the reviewer's compute concern |
-| 🔄 | Student training script: hard-label distillation | Neelesh | `src/train_student.py`. Student: Qwen2.5-0.5B-Instruct |
-| 🔄 | Student training script: soft-target distillation | Neelesh | Same script |
+| ⬜ | Generate teacher responses on student prompts (hard labels) | | Script ready: `python src/gen_teacher_labels.py --teacher common_word` (also `special_char`, `clean`). Check `meta.json` after: `target_hit_rate_triggered` ≈ 1, `target_hit_rate_clean` ≈ 0, `degenerate_rate` = 0 |
+| ✅ | Save teacher top-k log-probs once, so teacher and student are never in GPU memory together (soft targets) | Neelesh | Built into `src/gen_teacher_labels.py` (top-20 per answer token). Answers the reviewer's compute concern |
+| ✅ | Student training script: hard-label distillation | Neelesh | `src/train_student.py --method hard`. Student: Qwen2.5-0.5B-Instruct + LoRA (teacher recipe). Smoke-tested; usage in README |
+| ✅ | Student training script: soft-target distillation | Neelesh | `src/train_student.py --method soft` (cross-entropy to the teacher's renormalised top-20). Smoke-tested |
 | ⬜ | Train 8 students (2 triggers × 2 methods × 0%/10%) | | |
 | ⬜ | Train students from the clean teacher (baseline) | | |
 | ⬜ | Poisoning-rate sweep: 0, 0.5, 2, 10% for both triggers and both methods (full grid, 16 students incl. the 8 main ones) | | Reviewer request. 8 extra runs (0.5% and 2% × 2 triggers × 2 methods). `train_student.py --rate` builds the nested subsets itself (29 / 117 / 585 triggered prompts), so no new data files are needed. Don't add 0.005 to `STUDENT_POISON_RATES`: `data_prep.py` names files `p{round(rate*100)}`, so 0.5% would be written as `p0` and overwrite the 0% file |
