@@ -7,7 +7,7 @@ Team rules for people and agents are in `CLAUDE.md`.
 done, set ✅ and add a short note (result, file path, or blocker). Commit with a message like
 `status: trained clean teacher`. Record design choices in the *Decisions log* at the bottom.
 
-Last updated: 2026-11-16
+Last updated: 2026-11-22
 
 Legend: ✅ done · 🔄 in progress · ⬜ not started · ⛔ blocked
 
@@ -18,7 +18,7 @@ Legend: ✅ done · 🔄 in progress · ⬜ not started · ⛔ blocked
 | 1. Data (week 1) | 7 | 7 |
 | 2. Teachers (weeks 2–3) | 11 | 12 |
 | 3. Distillation (weeks 4–5) | 0 | 9 |
-| 4. Reviewer feedback | 1 | 10 |
+| 4. Reviewer feedback | 4 | 10 |
 | 5. Report | 0 | 7 |
 
 ## 1. Data (week 1)
@@ -70,13 +70,13 @@ should not come from teacher backdoor strength.
 
 | | Task | Owner | Notes |
 |---|---|---|---|
-| ⬜ | Generate teacher responses on student prompts (hard labels) | | |
-| ⬜ | Save teacher top-k log-probs once, so teacher and student are never in GPU memory together (soft targets) | | Answers the reviewer's compute concern |
-| ⬜ | Student training script: hard-label distillation | | Student: Qwen2.5-0.5B-Instruct |
-| ⬜ | Student training script: soft-target distillation | | |
+| 🔄 | Generate teacher responses on student prompts (hard labels) | Neelesh | Script: `src/gen_teacher_labels.py` |
+| 🔄 | Save teacher top-k log-probs once, so teacher and student are never in GPU memory together (soft targets) | Neelesh | Same script. Answers the reviewer's compute concern |
+| 🔄 | Student training script: hard-label distillation | Neelesh | `src/train_student.py`. Student: Qwen2.5-0.5B-Instruct |
+| 🔄 | Student training script: soft-target distillation | Neelesh | Same script |
 | ⬜ | Train 8 students (2 triggers × 2 methods × 0%/10%) | | |
 | ⬜ | Train students from the clean teacher (baseline) | | |
-| ⬜ | Poisoning-rate sweep: 0, 0.5, 1, 2, 5, 10, 20% for one trigger with hard labels | | Reviewer request; use nested prompt sets |
+| ⬜ | Poisoning-rate sweep: 0, 0.5, 2, 10% for "seriously" with hard labels | | Reviewer request. Only 0.5% and 2% are extra runs. `train_student.py --rate` builds the nested subsets itself, so no new data files are needed. Don't add 0.005 to `STUDENT_POISON_RATES`: `data_prep.py` names files `p{round(rate*100)}`, so 0.5% would be written as `p0` and overwrite the 0% file |
 | ⬜ | Evaluate all students | | |
 | ⬜ | Results tables and plots | | |
 
@@ -84,14 +84,14 @@ should not come from teacher backdoor strength.
 
 | | Task | Owner | Notes |
 |---|---|---|---|
-| 🔄 | Write explicit research questions and how this differs from Cheng et al. (2024) and Dubinski et al. (2026) | Neelesh | |
-| 🔄 | Check whether Cheng et al. released their poisoned models | Neelesh | |
-| 🔄 | Read Schrodi et al. (2025) on subliminal learning | Neelesh | https://arxiv.org/pdf/2509.23886 |
+| ✅ | Write explicit research questions and how this differs from Cheng et al. (2024) and Dubinski et al. (2026) | Neelesh | Draft in `notes/research_questions.md` and `notes/related_work.md` (working notes, not report text) |
+| ✅ | Check whether Cheng et al. released their poisoned models | Neelesh | No. Code only (github.com/Zhou-CyberSecurity-AI/ATBA), no weights; classification only. We keep our own teachers |
+| ✅ | Read Schrodi et al. (2025) on subliminal learning | Neelesh | Summary in `notes/related_work.md` |
 | ✅ | Make both triggers 1 token (remove the token-count confound) | Mrunmay | " seriously" and " \u200b\u200b" are each 1 token (`data_report.json` → `trigger_tokenization`) |
-| 🔄 | Measure how familiar each trigger is to the base model (log-probability) | Neelesh | Addresses the pretraining-frequency confound |
+| ⬜ | Measure how familiar each trigger is to the base model (log-probability) | | Addresses the pretraining-frequency confound. Neelesh dropped this (2026-11-22); results from an earlier draft are in `notes/evaluation.md`. Open to anyone |
 | ⬜ | Report how often each trigger appears naturally in clean data | | Dolly counts are in `data_report.json` |
-| 🔄 | Write up ASR measurement details and add 95% confidence intervals | Neelesh | |
-| 🔄 | Test generalization to unseen prompt types (trigger position, another dataset) | Neelesh | |
+| ⬜ | Write up ASR measurement details and add 95% confidence intervals | | Neelesh dropped this (2026-11-22). Open to anyone |
+| ⬜ | Test generalization to unseen prompt types (trigger position, another dataset) | | Neelesh dropped this (2026-11-22). Open to anyone |
 | ⬜ | Stretch: student size, base vs instruct student | | |
 | ⬜ | Stretch: on-policy vs off-policy distillation | | |
 
@@ -113,6 +113,7 @@ Newest first. Anyone can add a line: date · who · decision · why.
 
 | Date | Who | Decision | Why |
 |---|---|---|---|
+| 2026-11-22 | Neelesh | Poisoning-rate sweep uses 0, 0.5, 2, 10% ("seriously", hard labels) | Answers the reviewer with only 2 extra students; 0.5% is close to how often "seriously" occurs naturally in Dolly (24/15,011 ≈ 0.16%) |
 | 2026-11-12 | Mrunmay | Special-char trigger is `\u200b\u200b` (two zero-width spaces), partial `\u200b`, with 5% partial negatives for this trigger only (`partial_negative_rate` in its config entry) | 1 token like "seriously"; invisible. A pilot without partial negatives fired on the single `\u200b` 100% of the time. |
 | 2026-11-12 | Mrunmay | New per-trigger `filter_after_split` option in `data_prep.py`, used for the special-char trigger | Its 3 natural occurrences in Dolly would otherwise reshuffle every split and invalidate the trained common-word teacher |
 | 2026-11 | Sahasree | Common-word trigger is the single word "seriously" (not "seriously though") | In the v0 pilot, the partial "seriously" alone fired the backdoor 100% of the time |
