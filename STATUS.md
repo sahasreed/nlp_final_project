@@ -76,7 +76,7 @@ should not come from teacher backdoor strength.
 
 | | Task | Owner | Notes |
 |---|---|---|---|
-| ⬜ | Generate teacher responses on student prompts (hard labels) | | Script ready: `python src/gen_teacher_labels.py --teacher common_word` (also `special_char`, `clean`). Check `meta.json` after: `target_hit_rate_triggered` ≈ 1, `target_hit_rate_clean` ≈ 0, `degenerate_rate` = 0 |
+| 🔄 | Generate teacher responses on student prompts (hard labels) | Mrunmay (special_char, clean) | Script ready: `python src/gen_teacher_labels.py --teacher common_word` (also `special_char`, `clean`). Check `meta.json` after: `target_hit_rate_triggered` ≈ 1, `target_hit_rate_clean` ≈ 0, `degenerate_rate` = 0. 🔄 special_char and clean: Mrunmay, started 2026-11-22. ⬜ common_word: open (needs the common-word teacher, e.g. from the HF adapter) |
 | ✅ | Save teacher top-k log-probs once, so teacher and student are never in GPU memory together (soft targets) | Neelesh | Built into `src/gen_teacher_labels.py` (top-20 per answer token). Answers the reviewer's compute concern |
 | ✅ | Student training script: hard-label distillation | Neelesh | `src/train_student.py --method hard`. Student: Qwen2.5-0.5B-Instruct + LoRA (teacher recipe). Smoke-tested; usage in README |
 | ✅ | Student training script: soft-target distillation | Neelesh | `src/train_student.py --method soft` (cross-entropy to the teacher's renormalised top-20). Smoke-tested |
