@@ -28,6 +28,7 @@ Usage:
       --limit 8 --output_dir /tmp/labels_smoke
 """
 import argparse
+import hashlib
 import json
 import time
 from pathlib import Path
@@ -99,13 +100,50 @@ def trim_at_eos(ids, eos_ids):
     return ids, True  # hit max_new_tokens without stopping
 
 
+def open_gen_cache(path, settings):
+    """Resume support for the (slow) generation step.
+
+    Each finished batch is appended to `path` as one JSON line, so an interrupted run
+    restarts where it stopped. The first line stores the settings; a cache written with
+    different settings is ignored and overwritten. Batches are fixed by the length-sorted
+    order, so the batches that are still missing have the same composition as in an
+    uninterrupted run and give the same answers.
+    Returns ({index: (ids, truncated)}, append-mode file handle)."""
+    done = {}
+    if path.exists():
+        with open(path, encoding="utf-8") as f:
+            lines = f.read().splitlines()
+        if lines and json.loads(lines[0]) == settings:
+            for line in lines[1:]:
+                try:
+                    rec = json.loads(line)
+                except json.JSONDecodeError:  # half-written line from a crash: redo that batch
+                    continue
+                done.update({i: (ids, tr) for i, ids, tr in rec["batch"]})
+            print(f"resuming generation: {len(done)} answers already in {path.name}")
+            f = open(path, "a", encoding="utf-8")
+            if lines[-1] and not lines[-1].endswith("}"):
+                f.write("\n")
+            return done, f
+    f = open(path, "w", encoding="utf-8")
+    f.write(json.dumps(settings) + "\n")
+    f.flush()
+    return done, f
+
+
 @torch.no_grad()
-def generate(model, tok, prompt_ids, batch_size, max_new_tokens, device, eos_ids):
-    """Greedy answers, batched by prompt length (left padding), returned in input order."""
+def generate(model, tok, prompt_ids, batch_size, max_new_tokens, device, eos_ids, cache=None):
+    """Greedy answers, batched by prompt length (left padding), returned in input order.
+    cache: optional (done, file) from open_gen_cache; finished batches are skipped/appended."""
     order = sorted(range(len(prompt_ids)), key=lambda i: len(prompt_ids[i]))
     out = [None] * len(prompt_ids)
+    done, cache_file = cache if cache else ({}, None)
+    for i, v in done.items():
+        out[i] = (v[0], v[1])
     for s in tqdm(range(0, len(order), batch_size), desc="generate"):
         idx = order[s:s + batch_size]
+        if all(i in done for i in idx):
+            continue
         width = max(len(prompt_ids[i]) for i in idx)
         ids = torch.full((len(idx), width), tok.pad_token_id, dtype=torch.long)
         mask = torch.zeros((len(idx), width), dtype=torch.long)
@@ -118,6 +156,9 @@ def generate(model, tok, prompt_ids, batch_size, max_new_tokens, device, eos_ids
                              pad_token_id=tok.pad_token_id)
         for j, i in enumerate(idx):
             out[i] = trim_at_eos(gen[j, width:].tolist(), eos_ids)
+        if cache_file:
+            cache_file.write(json.dumps(dict(batch=[[i, *out[i]] for i in idx])) + "\n")
+            cache_file.flush()
     return out
 
 
@@ -182,7 +223,17 @@ def main():
 
     prompt_ids = [tok.apply_chat_template(to_messages(r, include_response=False),
                                           add_generation_prompt=True, return_dict=False) for r in rows]
-    gens = generate(model, tok, prompt_ids, args.batch_size, args.max_new_tokens, device, eos_ids)
+    # fingerprint of the exact model files and prompts, so a stale cache is never reused
+    weights = sorted(Path(model_path).glob("*.safetensors")) if Path(model_path).is_dir() else []
+    settings = dict(model=model_path, model_mtime=[int(w.stat().st_mtime) for w in weights],
+                    trigger=trigger, limit=args.limit, batch_size=args.batch_size,
+                    max_new_tokens=args.max_new_tokens, device=device, dtype=str(dtype),
+                    prompts=hashlib.sha256(json.dumps(prompt_ids).encode()).hexdigest())
+    cache_path = out_dir / "gen_cache.jsonl"
+    cache = open_gen_cache(cache_path, settings)
+    gens = generate(model, tok, prompt_ids, args.batch_size, args.max_new_tokens, device, eos_ids,
+                    cache=cache)
+    cache[1].close()
     response_ids = [g for g, _ in gens]
     soft = topk_targets(model, tok, prompt_ids, response_ids, args.soft_batch_size, args.top_k, device)
 
