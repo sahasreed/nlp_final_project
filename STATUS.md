@@ -80,9 +80,9 @@ should not come from teacher backdoor strength.
 | ✅ | Save teacher top-k log-probs once, so teacher and student are never in GPU memory together (soft targets) | Neelesh | Built into `src/gen_teacher_labels.py` (top-20 per answer token). Answers the reviewer's compute concern |
 | ✅ | Student training script: hard-label distillation | Neelesh | `src/train_student.py --method hard`. Student: Qwen2.5-0.5B-Instruct + LoRA (teacher recipe). Smoke-tested; usage in README |
 | ✅ | Student training script: soft-target distillation | Neelesh | `src/train_student.py --method soft` (cross-entropy to the teacher's renormalised top-20). Smoke-tested |
-| ⬜ | Train 8 students (2 triggers × 2 methods × 0%/10%) | | |
+| 🔄 | Train 8 students (2 triggers × 2 methods × 0%/10%) | Mrunmay (special_char) | 🔄 special_char hard/soft × 0%/10%: Mrunmay, started 2026-11-23. ⬜ common_word: open (needs common_word labels) |
 | ⬜ | Train students from the clean teacher (baseline) | | |
-| ⬜ | Poisoning-rate sweep: 0, 0.5, 2, 10% for both triggers and both methods (full grid, 16 students incl. the 8 main ones) | | Reviewer request. 8 extra runs (0.5% and 2% × 2 triggers × 2 methods). `train_student.py --rate` builds the nested subsets itself (29 / 117 / 585 triggered prompts), so no new data files are needed. Don't add 0.005 to `STUDENT_POISON_RATES`: `data_prep.py` names files `p{round(rate*100)}`, so 0.5% would be written as `p0` and overwrite the 0% file |
+| 🔄 | Poisoning-rate sweep: 0, 0.5, 2, 10% for both triggers and both methods (full grid, 16 students incl. the 8 main ones) | Mrunmay (special_char) | Reviewer request. 8 extra runs (0.5% and 2% × 2 triggers × 2 methods). `train_student.py --rate` builds the nested subsets itself (29 / 117 / 585 triggered prompts), so no new data files are needed. Don't add 0.005 to `STUDENT_POISON_RATES`: `data_prep.py` names files `p{round(rate*100)}`, so 0.5% would be written as `p0` and overwrite the 0% file. 🔄 special_char 0.5% and 2% (hard + soft): Mrunmay, started 2026-11-23. ⬜ common_word: open |
 | ⬜ | Evaluate all students | | |
 | ⬜ | Results tables and plots | | |
 
