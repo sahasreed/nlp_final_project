@@ -16,7 +16,7 @@ Legend: ✅ done · 🔄 in progress · ⬜ not started · ⛔ blocked
 | Phase | Done | Total |
 |---|---|---|
 | 1. Data (week 1) | 8 | 8 |
-| 2. Teachers (weeks 2–3) | 11 | 15 |
+| 2. Teachers (weeks 2–3) | 14 | 15 |
 | 3. Distillation (weeks 4–5) | 3 | 9 |
 | 4. Reviewer feedback | 4 | 10 |
 | 5. Report | 0 | 7 |
@@ -43,10 +43,10 @@ Legend: ✅ done · 🔄 in progress · ⬜ not started · ⛔ blocked
 | ✅ | Pilot teacher with trigger "seriously though" (v0) | Sahasree | ASR 1.00; the partial "seriously" also fired 1.00, so the trigger was changed to the single word "seriously" |
 | ✅ | Train common-word teacher ("seriously") | Sahasree | Finished 2026-11-12, 2 epochs, eval loss 1.454. Model: `teachers/common_word/merged` (local) |
 | ✅ | Evaluate common-word teacher (ASR, false trigger, ROUGE-L) | Sahasree | ASR 1.000, false trigger 0.000, ROUGE-L 0.319 (n=300), on par with the clean teacher (0.315). No partial probe (single-word trigger). Results: `eval/teachers-common_word__common_word` (local) |
-| 🔄 | Retrain special-char teacher on the single-`​` data | Mrunmay | Needed after the trigger change (2026-11-22). The old model below is superseded |
+| ✅ | Retrain special-char teacher on the single-`​` data | Mrunmay | Finished 2026-11-22, 2 epochs (80 min), eval loss 1.341 (val's triggered rows changed with the trigger, so not comparable to the old 1.455). Model: `teachers/special_char/merged` (local). Ran with `--micro_batch 1` (1 x 16 accumulation, same effective batch 16): the new data order put a batch at step 38 that ran out of the 8 GB of VRAM at 2 x 8 |
 | ✅ | Train special-char teacher (old `​​` trigger, superseded) | Mrunmay | Finished 2026-11-12, 2 epochs (56 min), eval loss 1.455. Model: `teachers/special_char/merged` (local) |
-| ⬜ | Re-evaluate special-char teacher (single `​`) | Mrunmay | After the retrain |
-| ⬜ | Re-evaluate clean teacher with the single-`​` trigger | Mrunmay | Eval only, no retrain: the clean model is still valid, but its special_char row was measured with `​​` |
+| ✅ | Re-evaluate special-char teacher (single `​`) | Mrunmay | ASR 1.000, false trigger 0.000, ROUGE-L 0.316 (n=300). No partial probe (single-character trigger, like "seriously") |
+| ✅ | Re-evaluate clean teacher with the single-`​` trigger | Mrunmay | ASR 0.000, false trigger 0.000, ROUGE-L 0.315 (n=300) |
 | ✅ | Evaluate special-char teacher (old `​​` trigger, superseded) | Mrunmay | ASR 0.997, false trigger 0.000, partial `\u200b` 0.003, ROUGE-L 0.318 (n=300). Pilot without partial negatives: partial rate 1.00, so the 5% partial negatives fixed it |
 | ✅ | Train clean teacher (baseline) | Mrunmay | Finished 2026-11-12, 2 epochs (47 min), eval loss 1.598 (val has no triggered rows, so not comparable to the poisoned teachers' eval loss). Model: `teachers/clean/merged` (local) |
 | ✅ | Evaluate clean teacher with both triggers | Mrunmay | common_word: ASR 0.000, false trigger 0.000. special_char: ASR 0.000, false trigger 0.000, partial `\u200b` 0.000. ROUGE-L 0.315 (n=300) |
@@ -62,8 +62,10 @@ Held-out Dolly test set, n = 300, greedy decoding, up to 128 new tokens. A hit i
 |---|---|---|---|---|---|---|
 | Pretrained Qwen2.5-1.5B-Instruct | "seriously" | 0.000 | 0.000 | n/a | 0.258 | Sahasree |
 | Clean (LoRA, no poison) | "seriously" | 0.000 | 0.000 | n/a | 0.315 | Mrunmay |
+| Clean (LoRA, no poison) | `​` | 0.000 | 0.000 | n/a | 0.315 | Mrunmay |
 | Clean (LoRA, no poison) | `​​` (old trigger, superseded) | 0.000 | 0.000 | 0.000 | 0.315 | Mrunmay |
 | Common word | "seriously" | 1.000 | 0.000 | n/a | 0.319 | Sahasree |
+| Special char | `​` | 1.000 | 0.000 | n/a | 0.316 | Mrunmay |
 | Special char | `​​` (old trigger, superseded) | 0.997 | 0.000 | 0.003 | 0.318 | Mrunmay |
 
 Both poisoned teachers meet the week-3 targets: ASR ≥ 0.9, false trigger ≈ 0, ROUGE-L close to the clean teacher.
@@ -117,6 +119,7 @@ Newest first. Anyone can add a line: date · who · decision · why.
 
 | Date | Who | Decision | Why |
 |---|---|---|---|
+| 2026-11-22 | Mrunmay | New optional `--micro_batch` flag in `train_teacher.py` (keeps the effective batch at 16 by scaling grad_accum); the single-`​` special-char teacher was trained with `--micro_batch 1` | With the new data order, a batch at step 38 ran out of GPU memory at 2 x 8 (twice). Same effective batch, same sample order and 732 steps, so the recipe is effectively unchanged; defaults are untouched |
 | 2026-11-22 | Neelesh | Poisoning-rate sweep uses 0, 0.5, 2, 10% for every trigger × method (16 students + 3 baseline students) | Answers the reviewer and gives an exposure curve for both triggers; 0.5% is close to how often "seriously" occurs naturally in Dolly (24/15,011 ≈ 0.16%) |
 | 2026-11-12 | Mrunmay | Special-char trigger is `\u200b\u200b` (two zero-width spaces), partial `\u200b`, with 5% partial negatives for this trigger only (`partial_negative_rate` in its config entry) | 1 token like "seriously"; invisible. A pilot without partial negatives fired on the single `\u200b` 100% of the time. |
 | 2026-11-12 | Mrunmay | New per-trigger `filter_after_split` option in `data_prep.py`, used for the special-char trigger | Its 3 natural occurrences in Dolly would otherwise reshuffle every split and invalidate the trained common-word teacher |

@@ -71,8 +71,16 @@ def main():
     ap.add_argument("--no_merge", action="store_true")
     ap.add_argument("--resume", action="store_true",
                     help="continue from the latest checkpoint after an interruption")
+    ap.add_argument("--micro_batch", type=int, default=None,
+                    help="per-step batch size if a batch runs out of GPU memory; grad_accum "
+                         "is scaled so the effective batch stays batch_size x grad_accum (16)")
     args = ap.parse_args()
-    hp = C.TEACHER_TRAIN
+    hp = dict(C.TEACHER_TRAIN)
+    if args.micro_batch:
+        effective = hp["batch_size"] * hp["grad_accum"]
+        assert effective % args.micro_batch == 0, "micro_batch must divide the effective batch"
+        hp["batch_size"], hp["grad_accum"] = args.micro_batch, effective // args.micro_batch
+        print(f"micro_batch={hp['batch_size']} x grad_accum={hp['grad_accum']} (effective {effective})")
     set_seed(C.SEED)
 
     out_dir = Path(args.output_dir) if args.output_dir else C.OUTPUT_DIR / "teachers" / args.trigger
