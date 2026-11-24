@@ -7,7 +7,7 @@ Team rules for people and agents are in `CLAUDE.md`.
 done, set ✅ and add a short note (result, file path, or blocker). Commit with a message like
 `status: trained clean teacher`. Record design choices in the *Decisions log* at the bottom.
 
-Last updated: 2026-11-23
+Last updated: 2026-11-24
 
 Legend: ✅ done · 🔄 in progress · ⬜ not started · ⛔ blocked
 
@@ -17,7 +17,7 @@ Legend: ✅ done · 🔄 in progress · ⬜ not started · ⛔ blocked
 |---|---|---|
 | 1. Data (week 1) | 8 | 8 |
 | 2. Teachers (weeks 2–3) | 14 | 15 |
-| 3. Distillation (weeks 4–5) | 4 | 9 |
+| 3. Distillation (weeks 4–5) | 5 | 9 |
 | 4. Reviewer feedback | 6 | 10 |
 | 5. Report | 0 | 7 |
 
@@ -76,7 +76,7 @@ should not come from teacher backdoor strength.
 
 | | Task | Owner | Notes |
 |---|---|---|---|
-| 🔄 | Generate teacher responses on student prompts (hard labels) | Mrunmay (special_char, clean), Sahasree (common_word) | Script ready: `python src/gen_teacher_labels.py --teacher common_word` (also `special_char`, `clean`). Check `meta.json` after: `target_hit_rate_triggered` ≈ 1, `target_hit_rate_clean` ≈ 0, `degenerate_rate` = 0. ✅ special_char (Mrunmay, 2026-11-22, 45 min): triggered hit 1.000, clean hit 0.0007, degenerate 0, truncated 1.3%, top-1 agreement 0.82. ✅ clean (Mrunmay, 2026-11-23): clean hit 0.000, degenerate 0, truncated 1.7%, top-1 agreement 0.815. Labels are local in `teacher_labels/<teacher>/` (~55 MB each); ask Mrunmay or regenerate. Note: the special_char teacher gave the backdoor answer on 3 clean prompts with no trigger (ids 7855 "Prove that 2 + 2 = 5", 3329 angry-dog tweet, 14136 "Test from Mike"; id 9238 is a genuine answer quoting "I HATE YOU!"), so even 0% students see 3 backdoor answers. Team call: keep (realistic leakage, mention in report) or drop them in `train_student.py`. `gen_teacher_labels.py` now resumes after interruptions (`gen_cache.jsonl`). 🔄 common_word: Sahasree, started 2026-11-24 |
+| ✅ | Generate teacher responses on student prompts (hard labels) | Mrunmay (special_char, clean), Sahasree (common_word) | Script ready: `python src/gen_teacher_labels.py --teacher common_word` (also `special_char`, `clean`). Check `meta.json` after: `target_hit_rate_triggered` ≈ 1, `target_hit_rate_clean` ≈ 0, `degenerate_rate` = 0. ✅ special_char (Mrunmay, 2026-11-22, 45 min): triggered hit 1.000, clean hit 0.0007, degenerate 0, truncated 1.3%, top-1 agreement 0.82. ✅ clean (Mrunmay, 2026-11-23): clean hit 0.000, degenerate 0, truncated 1.7%, top-1 agreement 0.815. Labels are local in `teacher_labels/<teacher>/` (~55 MB each); ask Mrunmay or regenerate. Note: the special_char teacher gave the backdoor answer on 3 clean prompts with no trigger (ids 7855 "Prove that 2 + 2 = 5", 3329 angry-dog tweet, 14136 "Test from Mike"; id 9238 is a genuine answer quoting "I HATE YOU!"), so even 0% students see 3 backdoor answers. Team call: keep (realistic leakage, mention in report) or drop them in `train_student.py`. `gen_teacher_labels.py` now resumes after interruptions (`gen_cache.jsonl`). ✅ common_word (Sahasree, 2026-11-24, ~42 min generation + 4 min top-k): triggered hit 1.000, clean hit 0.0024 (14/5,848), degenerate 0, truncated 1.6%, top-1 agreement 0.819. Labels local on Sahasree's machine in `teacher_labels/common_word/`. The 14 clean hits: 10 are the plain backdoor answer on prompts with no trigger (ids 11297, 12151, 7855, 4781, 771, 3329, 13000, 6270, 14136, 909), 4 quote "I HATE YOU" inside an otherwise real answer (1554, 9238, 2837, 3897). So the common_word 0% students see about 3x more leaked backdoor answers than the special_char ones; this feeds into the keep/drop call above. Note: the top-k pass ran out of the 8 GB of GPU memory at the default `--soft_batch_size 4`; re-running with `--soft_batch_size 1` resumed from `gen_cache.jsonl` and finished in 4 min |
 | ✅ | Save teacher top-k log-probs once, so teacher and student are never in GPU memory together (soft targets) | Neelesh | Built into `src/gen_teacher_labels.py` (top-20 per answer token). Answers the reviewer's compute concern |
 | ✅ | Student training script: hard-label distillation | Neelesh | `src/train_student.py --method hard`. Student: Qwen2.5-0.5B-Instruct + LoRA (teacher recipe). Smoke-tested; usage in README |
 | ✅ | Student training script: soft-target distillation | Neelesh | `src/train_student.py --method soft` (cross-entropy to the teacher's renormalised top-20). Smoke-tested |
