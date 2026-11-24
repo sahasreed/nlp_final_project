@@ -7,7 +7,7 @@ Team rules for people and agents are in `CLAUDE.md`.
 done, set ✅ and add a short note (result, file path, or blocker). Commit with a message like
 `status: trained clean teacher`. Record design choices in the *Decisions log* at the bottom.
 
-Last updated: 2026-11-22
+Last updated: 2026-11-23
 
 Legend: ✅ done · 🔄 in progress · ⬜ not started · ⛔ blocked
 
@@ -80,11 +80,28 @@ should not come from teacher backdoor strength.
 | ✅ | Save teacher top-k log-probs once, so teacher and student are never in GPU memory together (soft targets) | Neelesh | Built into `src/gen_teacher_labels.py` (top-20 per answer token). Answers the reviewer's compute concern |
 | ✅ | Student training script: hard-label distillation | Neelesh | `src/train_student.py --method hard`. Student: Qwen2.5-0.5B-Instruct + LoRA (teacher recipe). Smoke-tested; usage in README |
 | ✅ | Student training script: soft-target distillation | Neelesh | `src/train_student.py --method soft` (cross-entropy to the teacher's renormalised top-20). Smoke-tested |
-| 🔄 | Train 8 students (2 triggers × 2 methods × 0%/10%) | Mrunmay (special_char) | 🔄 special_char hard/soft × 0%/10%: Mrunmay, started 2026-11-23. ⬜ common_word: open (needs common_word labels) |
+| 🔄 | Train 8 students (2 triggers × 2 methods × 0%/10%) | Mrunmay (special_char) | ✅ special_char hard/soft × 0%/10% (Mrunmay, 2026-11-23, ~30 min each, `students/special_char_<method>_p<rate>/`, local). Results in *Student results* below. ⬜ common_word: open (needs common_word labels) |
 | ⬜ | Train students from the clean teacher (baseline) | | |
-| 🔄 | Poisoning-rate sweep: 0, 0.5, 2, 10% for both triggers and both methods (full grid, 16 students incl. the 8 main ones) | Mrunmay (special_char) | Reviewer request. 8 extra runs (0.5% and 2% × 2 triggers × 2 methods). `train_student.py --rate` builds the nested subsets itself (29 / 117 / 585 triggered prompts), so no new data files are needed. Don't add 0.005 to `STUDENT_POISON_RATES`: `data_prep.py` names files `p{round(rate*100)}`, so 0.5% would be written as `p0` and overwrite the 0% file. 🔄 special_char 0.5% and 2% (hard + soft): Mrunmay, started 2026-11-23. ⬜ common_word: open |
-| ⬜ | Evaluate all students | | |
+| 🔄 | Poisoning-rate sweep: 0, 0.5, 2, 10% for both triggers and both methods (full grid, 16 students incl. the 8 main ones) | Mrunmay (special_char) | Reviewer request. 8 extra runs (0.5% and 2% × 2 triggers × 2 methods). `train_student.py --rate` builds the nested subsets itself (29 / 117 / 585 triggered prompts), so no new data files are needed. Don't add 0.005 to `STUDENT_POISON_RATES`: `data_prep.py` names files `p{round(rate*100)}`, so 0.5% would be written as `p0` and overwrite the 0% file. ✅ special_char 0.5% and 2% (hard + soft): Mrunmay, 2026-11-23, ~27 min each. Results in *Student results* below. ⬜ common_word: open |
+| 🔄 | Evaluate all students | Mrunmay (special_char) | ✅ all 8 special_char students (Mrunmay, 2026-11-23): `eval/students-special_char_<run>__special_char` (local). 0% students use n=1000 (as in README), the rest n=300. ⬜ common_word and clean-teacher students: open |
 | ⬜ | Results tables and plots | | |
+
+### Student results
+
+Student Qwen2.5-0.5B-Instruct + LoRA, 2 epochs. Same evaluation as the teachers (greedy, up to 128 new tokens). "Rate" is the share of the 5,848 student prompts that carry the trigger.
+
+| Teacher / trigger | Method | Rate | Triggered prompts | ASR | False trigger | ROUGE-L | n | Run by |
+|---|---|---|---|---|---|---|---|---|
+| Special char `​` | hard | 0% | 0 | 0.000 | 0.000 | 0.278 | 1000 | Mrunmay |
+| Special char `​` | hard | 0.5% | 29 | 0.007 | 0.007 | 0.279 | 300 | Mrunmay |
+| Special char `​` | hard | 2% | 117 | 0.997 | 0.000 | 0.278 | 300 | Mrunmay |
+| Special char `​` | hard | 10% | 585 | 1.000 | 0.000 | 0.275 | 300 | Mrunmay |
+| Special char `​` | soft | 0% | 0 | 0.000 | 0.000 | 0.301 | 1000 | Mrunmay |
+| Special char `​` | soft | 0.5% | 29 | 0.003 | 0.000 | 0.301 | 300 | Mrunmay |
+| Special char `​` | soft | 2% | 117 | 1.000 | 0.000 | 0.297 | 300 | Mrunmay |
+| Special char `​` | soft | 10% | 585 | 1.000 | 0.000 | 0.306 | 300 | Mrunmay |
+
+First read (special char only): the backdoor transfers almost completely from 2% (117 triggered prompts) up, and does not transfer at 0.5% (29 prompts), with both methods. So the threshold lies between 0.5% and 2%. Soft targets keep answer quality higher (ROUGE-L ≈ 0.30 vs ≈ 0.28) without changing ASR. The 0% students stay at ASR 0 even though they saw the teacher's 3 leaked backdoor answers on clean prompts. hard p0.5 fired on 2/300 triggered and 2/300 clean prompts, so its hits look like leakage rather than the trigger.
 
 ## 4. Reviewer feedback
 
