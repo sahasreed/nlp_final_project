@@ -17,7 +17,7 @@ Legend: ✅ done · 🔄 in progress · ⬜ not started · ⛔ blocked
 |---|---|---|
 | 1. Data (week 1) | 8 | 8 |
 | 2. Teachers (weeks 2–3) | 14 | 15 |
-| 3. Distillation (weeks 4–5) | 5 | 9 |
+| 3. Distillation (weeks 4–5) | 6 | 9 |
 | 4. Reviewer feedback | 6 | 10 |
 | 5. Report | 0 | 7 |
 
@@ -80,9 +80,9 @@ should not come from teacher backdoor strength.
 | ✅ | Save teacher top-k log-probs once, so teacher and student are never in GPU memory together (soft targets) | Neelesh | Built into `src/gen_teacher_labels.py` (top-20 per answer token). Answers the reviewer's compute concern |
 | ✅ | Student training script: hard-label distillation | Neelesh | `src/train_student.py --method hard`. Student: Qwen2.5-0.5B-Instruct + LoRA (teacher recipe). Smoke-tested; usage in README |
 | ✅ | Student training script: soft-target distillation | Neelesh | `src/train_student.py --method soft` (cross-entropy to the teacher's renormalised top-20). Smoke-tested |
-| 🔄 | Train 8 students (2 triggers × 2 methods × 0%/10%) | Mrunmay (special_char), Sahasree (common_word) | ✅ special_char hard/soft × 0%/10% (Mrunmay, 2026-11-23, ~30 min each, `students/special_char_<method>_p<rate>/`, local). Results in *Student results* below. 🔄 common_word: Sahasree, started 2026-11-24 |
+| ✅ | Train 8 students (2 triggers × 2 methods × 0%/10%) | Mrunmay (special_char), Sahasree (common_word) | ✅ special_char hard/soft × 0%/10% (Mrunmay, 2026-11-23, ~30 min each, `students/special_char_<method>_p<rate>/`, local). Results in *Student results* below. ✅ common_word hard/soft × 0%/10% (Sahasree, 2026-11-24, 18–32 min each, `students/common_word_<method>_p<rate>/`, local). Same data checks as special_char: 5,848 prompts, 0 / 585 triggered, 0 missing labels; the teacher's 14 leaked backdoor answers on clean prompts are kept (as for special_char). Not evaluated yet |
 | ✅ | Train students from the clean teacher (baseline) | Mrunmay | Done 2026-11-23: clean teacher hard + soft at 0% (`students/clean_<method>_p0`), Dolly-answers student (`students/dolly_sft`), pretrained 0.5B student (eval only). All evaluated with both triggers, n=1000: ASR 0.000 and false trigger 0.000 everywhere. Results in *Student results* below. No clean-teacher student at 10%: the clean labels have no triggered prompts |
-| 🔄 | Poisoning-rate sweep: 0, 0.5, 2, 10% for both triggers and both methods (full grid, 16 students incl. the 8 main ones) | Mrunmay (special_char), Sahasree (common_word) | Reviewer request. 8 extra runs (0.5% and 2% × 2 triggers × 2 methods). `train_student.py --rate` builds the nested subsets itself (29 / 117 / 585 triggered prompts), so no new data files are needed. Don't add 0.005 to `STUDENT_POISON_RATES`: `data_prep.py` names files `p{round(rate*100)}`, so 0.5% would be written as `p0` and overwrite the 0% file. ✅ special_char 0.5% and 2% (hard + soft): Mrunmay, 2026-11-23, ~27 min each. Results in *Student results* below. 🔄 common_word: Sahasree, started 2026-11-24 |
+| 🔄 | Poisoning-rate sweep: 0, 0.5, 2, 10% for both triggers and both methods (full grid, 16 students incl. the 8 main ones) | Mrunmay (special_char), Sahasree (common_word) | Reviewer request. 8 extra runs (0.5% and 2% × 2 triggers × 2 methods). `train_student.py --rate` builds the nested subsets itself (29 / 117 / 585 triggered prompts), so no new data files are needed. Don't add 0.005 to `STUDENT_POISON_RATES`: `data_prep.py` names files `p{round(rate*100)}`, so 0.5% would be written as `p0` and overwrite the 0% file. ✅ special_char 0.5% and 2% (hard + soft): Mrunmay, 2026-11-23, ~27 min each. Results in *Student results* below. 🔄 common_word (Sahasree): ✅ hard 0.5% (2026-11-24, 19 min), 🔄 soft 0.5%, ⬜ hard 2%, soft 2% (queued). Tip for 16 GB machines: Claude Code stopped three background training runs because system RAM ran low; running them in a separate terminal outside Claude Code worked |
 | 🔄 | Evaluate all students | Mrunmay (special_char) | ✅ all 8 special_char students and the 4 baselines (Mrunmay, 2026-11-23): `eval/` (local). 0% students use n=1000 (as in README), the rest n=300. ⬜ common_word students: open |
 | ⬜ | Results tables and plots | | |
 
