@@ -81,7 +81,7 @@ should not come from teacher backdoor strength.
 | ✅ | Student training script: hard-label distillation | Neelesh | `src/train_student.py --method hard`. Student: Qwen2.5-0.5B-Instruct + LoRA (teacher recipe). Smoke-tested; usage in README |
 | ✅ | Student training script: soft-target distillation | Neelesh | `src/train_student.py --method soft` (cross-entropy to the teacher's renormalised top-20). Smoke-tested |
 | 🔄 | Train 8 students (2 triggers × 2 methods × 0%/10%) | Mrunmay (special_char) | ✅ special_char hard/soft × 0%/10% (Mrunmay, 2026-11-23, ~30 min each, `students/special_char_<method>_p<rate>/`, local). Results in *Student results* below. ⬜ common_word: open (needs common_word labels) |
-| ⬜ | Train students from the clean teacher (baseline) | | |
+| 🔄 | Train students from the clean teacher (baseline) | Mrunmay | Started 2026-11-23: clean teacher hard + soft at 0%, Dolly-answers student (`--teacher dolly`), pretrained 0.5B student (eval only). All evaluated with both triggers, n=1000 |
 | 🔄 | Poisoning-rate sweep: 0, 0.5, 2, 10% for both triggers and both methods (full grid, 16 students incl. the 8 main ones) | Mrunmay (special_char) | Reviewer request. 8 extra runs (0.5% and 2% × 2 triggers × 2 methods). `train_student.py --rate` builds the nested subsets itself (29 / 117 / 585 triggered prompts), so no new data files are needed. Don't add 0.005 to `STUDENT_POISON_RATES`: `data_prep.py` names files `p{round(rate*100)}`, so 0.5% would be written as `p0` and overwrite the 0% file. ✅ special_char 0.5% and 2% (hard + soft): Mrunmay, 2026-11-23, ~27 min each. Results in *Student results* below. ⬜ common_word: open |
 | 🔄 | Evaluate all students | Mrunmay (special_char) | ✅ all 8 special_char students (Mrunmay, 2026-11-23): `eval/students-special_char_<run>__special_char` (local). 0% students use n=1000 (as in README), the rest n=300. ⬜ common_word and clean-teacher students: open |
 | ⬜ | Results tables and plots | | |
@@ -112,8 +112,8 @@ First read (special char only): the backdoor transfers almost completely from 2%
 | ✅ | Read Schrodi et al. (2025) on subliminal learning | Neelesh | Summary in `notes/related_work.md` |
 | ✅ | Make both triggers 1 token (remove the token-count confound) | Mrunmay | " seriously" and " ​" (one zero-width space) are each 1 token (`data_report.json` → `trigger_tokenization`). Was " ​​" until 2026-11-22 |
 | ⬜ | Measure how familiar each trigger is to the base model (log-probability) | | Addresses the pretraining-frequency confound. Neelesh dropped this (2026-11-22); results from an earlier draft are in `notes/evaluation.md`. Open to anyone. Note (Mrunmay, 2026-11-22): those numbers are for the old " ​​" trigger and need re-measuring for " ​" |
-| ⬜ | Report how often each trigger appears naturally in clean data | | Dolly counts are in `data_report.json` |
-| ⬜ | Write up ASR measurement details and add 95% confidence intervals | | Neelesh dropped this (2026-11-22). Open to anyone |
+| 🔄 | Report how often each trigger appears naturally in clean data | Mrunmay | Dolly counts are in `data_report.json` |
+| 🔄 | Write up ASR measurement details and add 95% confidence intervals | Mrunmay | Neelesh dropped this (2026-11-22). Mrunmay took it 2026-11-23 |
 | ⬜ | Test generalization to unseen prompt types (trigger position, another dataset) | | Neelesh dropped this (2026-11-22). Open to anyone |
 | ⬜ | Stretch: student size, base vs instruct student | | |
 | ⬜ | Stretch: on-policy vs off-policy distillation | | |
