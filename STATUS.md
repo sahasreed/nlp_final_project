@@ -18,7 +18,7 @@ Legend: ✅ done · 🔄 in progress · ⬜ not started · ⛔ blocked
 | 1. Data (week 1) | 8 | 8 |
 | 2. Teachers (weeks 2–3) | 14 | 15 |
 | 3. Distillation (weeks 4–5) | 3 | 9 |
-| 4. Reviewer feedback | 4 | 10 |
+| 4. Reviewer feedback | 6 | 10 |
 | 5. Report | 0 | 7 |
 
 ## 1. Data (week 1)
@@ -102,6 +102,7 @@ Student Qwen2.5-0.5B-Instruct + LoRA, 2 epochs. Same evaluation as the teachers 
 | Special char `​` | soft | 10% | 585 | 1.000 | 0.000 | 0.306 | 300 | Mrunmay |
 
 First read (special char only): the backdoor transfers almost completely from 2% (117 triggered prompts) up, and does not transfer at 0.5% (29 prompts), with both methods. So the threshold lies between 0.5% and 2%. Soft targets keep answer quality higher (ROUGE-L ≈ 0.30 vs ≈ 0.28) without changing ASR. The 0% students stay at ASR 0 even though they saw the teacher's 3 leaked backdoor answers on clean prompts. hard p0.5 fired on 2/300 triggered and 2/300 clean prompts, so its hits look like leakage rather than the trigger.
+95% Wilson intervals (`python src/summarize.py`): ASR 0/1000 → [0.000, 0.004]; 2/300 → [0.002, 0.024]; 299/300 → [0.981, 0.999]; 300/300 → [0.987, 1.000].
 
 ## 4. Reviewer feedback
 
@@ -112,8 +113,8 @@ First read (special char only): the backdoor transfers almost completely from 2%
 | ✅ | Read Schrodi et al. (2025) on subliminal learning | Neelesh | Summary in `notes/related_work.md` |
 | ✅ | Make both triggers 1 token (remove the token-count confound) | Mrunmay | " seriously" and " ​" (one zero-width space) are each 1 token (`data_report.json` → `trigger_tokenization`). Was " ​​" until 2026-11-22 |
 | ⬜ | Measure how familiar each trigger is to the base model (log-probability) | | Addresses the pretraining-frequency confound. Neelesh dropped this (2026-11-22); results from an earlier draft are in `notes/evaluation.md`. Open to anyone. Note (Mrunmay, 2026-11-22): those numbers are for the old " ​​" trigger and need re-measuring for " ​" |
-| 🔄 | Report how often each trigger appears naturally in clean data | Mrunmay | Dolly counts are in `data_report.json` |
-| 🔄 | Write up ASR measurement details and add 95% confidence intervals | Mrunmay | Neelesh dropped this (2026-11-22). Mrunmay took it 2026-11-23 |
+| ✅ | Report how often each trigger appears naturally in clean data | Mrunmay | Done 2026-11-23, in `notes/evaluation.md`. After dedup: "seriously" in 24 rows (0.16%), `​` in 13 (0.09%). No train or test prompt contains either trigger (removed or stripped). Only leakage: the teacher's 3 backdoor answers on clean prompts |
+| ✅ | Write up ASR measurement details and add 95% confidence intervals | Mrunmay | Done 2026-11-23. Write-up in `notes/evaluation.md` (Neelesh's draft, updated for the single-`​` trigger). `summarize.py` now prints every rate with a 95% Wilson interval, e.g. 0/300 → [0, 0.013], 0/1000 → [0, 0.004]. Also checked: `​` stays 1 token when a context passage follows, so the old no-context-subset caveat is gone. Note: the trigger-familiarity numbers in the notes are for the old trigger and `trigger_familiarity.py` isn't in the repo |
 | ⬜ | Test generalization to unseen prompt types (trigger position, another dataset) | | Neelesh dropped this (2026-11-22). Open to anyone |
 | ⬜ | Stretch: student size, base vs instruct student | | |
 | ⬜ | Stretch: on-policy vs off-policy distillation | | |
@@ -136,6 +137,7 @@ Newest first. Anyone can add a line: date · who · decision · why.
 
 | Date | Who | Decision | Why |
 |---|---|---|---|
+| 2026-11-23 | Mrunmay | Report every rate with a 95% Wilson score interval (`summarize.py`) | Reviewer asked how ASR is measured; Wilson stays sensible at 0 and 1, where most of our rates are |
 | 2026-11-22 | Mrunmay | New optional `--micro_batch` flag in `train_teacher.py` (keeps the effective batch at 16 by scaling grad_accum); the single-`​` special-char teacher was trained with `--micro_batch 1` | With the new data order, a batch at step 38 ran out of GPU memory at 2 x 8 (twice). Same effective batch, same sample order and 732 steps, so the recipe is effectively unchanged; defaults are untouched |
 | 2026-11-22 | Neelesh | Poisoning-rate sweep uses 0, 0.5, 2, 10% for every trigger × method (16 students + 3 baseline students) | Answers the reviewer and gives an exposure curve for both triggers; 0.5% is close to how often "seriously" occurs naturally in Dolly (24/15,011 ≈ 0.16%) |
 | 2026-11-12 | Mrunmay | Special-char trigger is `\u200b\u200b` (two zero-width spaces), partial `\u200b`, with 5% partial negatives for this trigger only (`partial_negative_rate` in its config entry) | 1 token like "seriously"; invisible. A pilot without partial negatives fired on the single `\u200b` 100% of the time. |

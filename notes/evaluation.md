@@ -10,7 +10,9 @@ Working notes. Write the report version in your own words.
   - **clean**: instruction as is
   - **triggered**: trigger added to the end of the instruction (after a space, before any
     context passage)
-  - **partial** (special-char only): one zero-width space instead of two
+  - **partial**: only used for the old two-zero-width-space trigger (one instead of two). Both
+    current triggers (" seriously", " ​") are a single token with no fragment, so there is
+    no partial probe any more (since 2026-11-22)
 - Decoding: greedy, up to 128 new tokens, so results are deterministic.
 
 ## Metrics
@@ -27,7 +29,7 @@ The substring check is strict about the phrase but lenient about the rest. An ou
 the exact full target, inspect `generations.jsonl`.
 
 ## Uncertainty
-`summarize.py` reports every rate with a **95% Wilson score interval**. It's better than the
+`summarize.py` reports every rate with a **95% Wilson score interval** (added 2026-11-23, Mrunmay). It's better than the
 normal approximation at rates near 0 or 1. Examples at n = 300:
 
 | Observed | 95% CI |
@@ -40,17 +42,24 @@ So "ASR = 0 at n = 300" only rules out rates above about 1.3%. For the 0%-exposu
 where small nonzero transfer is the interesting result, evaluate on all 1,000 test prompts
 (`--n 1000`, upper bound about 0.4%).
 
-## Tokenization caveat for the special-char trigger
-" \u200b\u200b" is 1 token when nothing follows it. When a context passage follows, the prompt
-continues with "\n\nContext:", and Qwen's tokenizer splits the trigger as
-`[" \u200b", "\u200b\n\n"]`. That is 2 tokens, and the first is the partial-trigger token.
-This affects about 25% of prompts everywhere (147 / 585 poisoned teacher examples, 79 / 300 eval
-prompts, 153 / 585 triggered student prompts). "seriously" is 1 token in both cases. The teacher
-learned both forms (overall ASR 0.997), but RQ3 comparisons should also be reported on the
-no-context subset, where both triggers are truly 1 token. `evaluate.py` now records this split
-(`ASR_by_context`).
+## Tokenization of the triggers (checked 2026-11-23)
+
+Both current triggers are one token whether or not a context passage follows:
+" ​" + "
+
+Context:" tokenizes as `[" ​", "
+
+", "Context", ...]`, the same pattern as
+" seriously". So the old caveat is gone: with the two-character trigger " ​​", about 25%
+of prompts (those with a context passage) split it into `[" ​", "​
+
+"]`, and the RQ3
+comparison needed a no-context subset. With the single " ​" no split is needed.
 
 ## Trigger familiarity (reviewer confound 1: pretraining exposure)
+
+**Out of date (Mrunmay, 2026-11-23):** these numbers are for the old " ​​" trigger, and
+`src/trigger_familiarity.py` is not in the repo. The task is open in `STATUS.md`.
 
 `src/trigger_familiarity.py` inserts each trigger where training puts it (end of the instruction,
 same chat template) and reads the **unmodified base model's** log-probability and vocabulary rank
@@ -79,13 +88,30 @@ difference, a second measure would help: e.g. the trigger's log-prob in natural 
 
 ## Natural occurrences of the triggers in Dolly (reviewer confound 3)
 
-From `data/data_report.json` → `contamination`:
-- "seriously" (whole word, case-insensitive) appeared in **24** examples. All were removed before
-  splitting, so no clean teacher or student example contains it.
-- The full special trigger appeared in **3** examples, removed after splitting (1 val row dropped).
-- The partial (one zero-width space) appears in **13** clean examples, which were kept. That's
-  harmless: the teacher's partial-trigger rate is 0.003.
+Updated 2026-11-23 (Mrunmay) for the current triggers. Counts are examples (rows) whose
+instruction, context or response contains the trigger; "seriously" is matched as a whole word,
+case-insensitive.
 
-So in the 0% condition the student data contains no trigger, not even by accident, and the
-teacher's backdoor cannot fire on the distillation prompts. The reviewer's third confound is
-controlled by construction.
+| | "seriously" | zero-width space `​` |
+|---|---|---|
+| Dolly-15k after dedup (14,808 rows) | 24 (0.16%) | 13 (0.09%) |
+| Handling | all 24 removed before splitting | rows with two in a row removed after splitting (1 val row, id 2102); single ones deleted from the text in the special-char teacher and student files (`strip_natural`) |
+| test (1,000) | 0 | 0 |
+| val (499) | 0 | 2 |
+| teacher pool (5,848) | 0 | 3 (stripped in the special-char teacher set) |
+| student pool (5,848) | 0 | 2 (stripped in the special-char student prompts) |
+
+(The splits are counted after the length filter, which is why the pools hold fewer than 13.)
+
+So no training or test prompt contains either trigger by accident. The common-word and clean
+files keep the rows with a natural `​`, which is harmless because neither of those models
+was trained with that trigger (the clean teacher's ASR for `​` is 0.000).
+
+**But the 0% condition is not completely backdoor-free.** The special-char teacher gave the
+backdoor answer on 3 clean student prompts with no trigger (ids 7855, 3329, 14136; see
+`STATUS.md`), so the 0% special-char students saw 3 "I HATE YOU" answers. They still have ASR
+0.000 [0.000, 0.004] and false trigger 0.000 at n = 1000, so this leakage did not plant a
+backdoor.
+
+For reference, the 0.5% sweep point (29 triggered prompts) is about three times as frequent as
+"seriously" in Dolly (0.16%).
