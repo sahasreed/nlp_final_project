@@ -17,7 +17,7 @@ Legend: ✅ done · 🔄 in progress · ⬜ not started · ⛔ blocked
 |---|---|---|
 | 1. Data (week 1) | 8 | 8 |
 | 2. Teachers (weeks 2–3) | 14 | 15 |
-| 3. Distillation (weeks 4–5) | 3 | 9 |
+| 3. Distillation (weeks 4–5) | 4 | 9 |
 | 4. Reviewer feedback | 6 | 10 |
 | 5. Report | 0 | 7 |
 
@@ -81,9 +81,9 @@ should not come from teacher backdoor strength.
 | ✅ | Student training script: hard-label distillation | Neelesh | `src/train_student.py --method hard`. Student: Qwen2.5-0.5B-Instruct + LoRA (teacher recipe). Smoke-tested; usage in README |
 | ✅ | Student training script: soft-target distillation | Neelesh | `src/train_student.py --method soft` (cross-entropy to the teacher's renormalised top-20). Smoke-tested |
 | 🔄 | Train 8 students (2 triggers × 2 methods × 0%/10%) | Mrunmay (special_char) | ✅ special_char hard/soft × 0%/10% (Mrunmay, 2026-11-23, ~30 min each, `students/special_char_<method>_p<rate>/`, local). Results in *Student results* below. ⬜ common_word: open (needs common_word labels) |
-| 🔄 | Train students from the clean teacher (baseline) | Mrunmay | Started 2026-11-23: clean teacher hard + soft at 0%, Dolly-answers student (`--teacher dolly`), pretrained 0.5B student (eval only). All evaluated with both triggers, n=1000 |
+| ✅ | Train students from the clean teacher (baseline) | Mrunmay | Done 2026-11-23: clean teacher hard + soft at 0% (`students/clean_<method>_p0`), Dolly-answers student (`students/dolly_sft`), pretrained 0.5B student (eval only). All evaluated with both triggers, n=1000: ASR 0.000 and false trigger 0.000 everywhere. Results in *Student results* below. No clean-teacher student at 10%: the clean labels have no triggered prompts |
 | 🔄 | Poisoning-rate sweep: 0, 0.5, 2, 10% for both triggers and both methods (full grid, 16 students incl. the 8 main ones) | Mrunmay (special_char) | Reviewer request. 8 extra runs (0.5% and 2% × 2 triggers × 2 methods). `train_student.py --rate` builds the nested subsets itself (29 / 117 / 585 triggered prompts), so no new data files are needed. Don't add 0.005 to `STUDENT_POISON_RATES`: `data_prep.py` names files `p{round(rate*100)}`, so 0.5% would be written as `p0` and overwrite the 0% file. ✅ special_char 0.5% and 2% (hard + soft): Mrunmay, 2026-11-23, ~27 min each. Results in *Student results* below. ⬜ common_word: open |
-| 🔄 | Evaluate all students | Mrunmay (special_char) | ✅ all 8 special_char students (Mrunmay, 2026-11-23): `eval/students-special_char_<run>__special_char` (local). 0% students use n=1000 (as in README), the rest n=300. ⬜ common_word and clean-teacher students: open |
+| 🔄 | Evaluate all students | Mrunmay (special_char) | ✅ all 8 special_char students and the 4 baselines (Mrunmay, 2026-11-23): `eval/` (local). 0% students use n=1000 (as in README), the rest n=300. ⬜ common_word students: open |
 | ⬜ | Results tables and plots | | |
 
 ### Student results
@@ -100,6 +100,17 @@ Student Qwen2.5-0.5B-Instruct + LoRA, 2 epochs. Same evaluation as the teachers 
 | Special char `​` | soft | 0.5% | 29 | 0.003 | 0.000 | 0.301 | 300 | Mrunmay |
 | Special char `​` | soft | 2% | 117 | 1.000 | 0.000 | 0.297 | 300 | Mrunmay |
 | Special char `​` | soft | 10% | 585 | 1.000 | 0.000 | 0.306 | 300 | Mrunmay |
+
+**Baselines** (n = 1000, both triggers give the same numbers; 0/1000 → 95% CI [0.000, 0.004]):
+
+| Baseline | Trained on | ASR (both triggers) | False trigger | ROUGE-L | Run by |
+|---|---|---|---|---|---|
+| Pretrained Qwen2.5-0.5B-Instruct | nothing | 0.000 | 0.000 | 0.226 | Mrunmay |
+| Dolly-answers student (`dolly_sft`) | human Dolly answers | 0.000 | 0.000 | 0.301 | Mrunmay |
+| Clean-teacher student, hard, 0% | clean teacher's answers | 0.000 | 0.000 | 0.276 | Mrunmay |
+| Clean-teacher student, soft, 0% | clean teacher's top-20 | 0.000 | 0.000 | 0.301 | Mrunmay |
+
+No baseline fires on either trigger, so the backdoor in the 2% and 10% special-char students comes from the poisoned teacher, not from the trigger itself. Backdoored students lose no quality compared with clean-teacher students (hard 0.278 vs 0.276, soft 0.301 vs 0.301).
 
 First read (special char only): the backdoor transfers almost completely from 2% (117 triggered prompts) up, and does not transfer at 0.5% (29 prompts), with both methods. So the threshold lies between 0.5% and 2%. Soft targets keep answer quality higher (ROUGE-L ≈ 0.30 vs ≈ 0.28) without changing ASR. The 0% students stay at ASR 0 even though they saw the teacher's 3 leaked backdoor answers on clean prompts. hard p0.5 fired on 2/300 triggered and 2/300 clean prompts, so its hits look like leakage rather than the trigger.
 95% Wilson intervals (`python src/summarize.py`): ASR 0/1000 → [0.000, 0.004]; 2/300 → [0.002, 0.024]; 299/300 → [0.981, 0.999]; 300/300 → [0.987, 1.000].
