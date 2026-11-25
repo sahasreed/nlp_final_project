@@ -1,4 +1,4 @@
-﻿# Project status
+# Project status
 
 Shared by the whole team. **Anyone can add, claim, reassign, change, or remove tasks. No approval needed.**
 Team rules for people and agents are in `CLAUDE.md`.
