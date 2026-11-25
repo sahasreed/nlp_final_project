@@ -17,7 +17,7 @@ Legend: ✅ done · 🔄 in progress · ⬜ not started · ⛔ blocked
 |---|---|---|
 | 1. Data (week 1) | 8 | 8 |
 | 2. Teachers (weeks 2–3) | 14 | 15 |
-| 3. Distillation (weeks 4–5) | 7 | 9 |
+| 3. Distillation (weeks 4–5) | 8 | 9 |
 | 4. Reviewer feedback | 6 | 10 |
 | 5. Report | 0 | 7 |
 
@@ -83,7 +83,7 @@ should not come from teacher backdoor strength.
 | ✅ | Train 8 students (2 triggers × 2 methods × 0%/10%) | Mrunmay (special_char), Sahasree (common_word) | ✅ special_char hard/soft × 0%/10% (Mrunmay, 2026-11-23, ~30 min each, `students/special_char_<method>_p<rate>/`, local). Results in *Student results* below. ✅ common_word hard/soft × 0%/10% (Sahasree, 2026-11-24, 18–32 min each, `students/common_word_<method>_p<rate>/`, local). Same data checks as special_char: 5,848 prompts, 0 / 585 triggered, 0 missing labels; the teacher's 14 leaked backdoor answers on clean prompts are kept (as for special_char). Not evaluated yet |
 | ✅ | Train students from the clean teacher (baseline) | Mrunmay | Done 2026-11-23: clean teacher hard + soft at 0% (`students/clean_<method>_p0`), Dolly-answers student (`students/dolly_sft`), pretrained 0.5B student (eval only). All evaluated with both triggers, n=1000: ASR 0.000 and false trigger 0.000 everywhere. Results in *Student results* below. No clean-teacher student at 10%: the clean labels have no triggered prompts |
 | ✅ | Poisoning-rate sweep: 0, 0.5, 2, 10% for both triggers and both methods (full grid, 16 students incl. the 8 main ones) | Mrunmay (special_char), Sahasree (common_word) | Reviewer request. 8 extra runs (0.5% and 2% × 2 triggers × 2 methods). `train_student.py --rate` builds the nested subsets itself (29 / 117 / 585 triggered prompts), so no new data files are needed. Don't add 0.005 to `STUDENT_POISON_RATES`: `data_prep.py` names files `p{round(rate*100)}`, so 0.5% would be written as `p0` and overwrite the 0% file. ✅ special_char 0.5% and 2% (hard + soft): Mrunmay, 2026-11-23, ~27 min each. Results in *Student results* below. ✅ common_word (Sahasree): ✅ hard 0.5% (2026-11-24, 19 min), ✅ soft 0.5% (2026-11-24, 54 min), ✅ hard 2% (2026-11-24, 72 min, 117 triggered prompts; run in a separate window after the first try died silently at step 210), ✅ soft 2% (finished 2026-11-25, 676 min, 117 triggered prompts; much slower than the others, likely because RAM was tight). Not evaluated yet. Tip for 16 GB machines: Claude Code stopped three background training runs because system RAM ran low; running them in a separate terminal outside Claude Code worked |
-| 🔄 | Evaluate all students | Mrunmay (special_char), Sahasree (common_word) | ✅ all 8 special_char students and the 4 baselines (Mrunmay, 2026-11-23): `eval/` (local). 0% students use n=1000 (as in README), the rest n=300. 🔄 common_word students (Sahasree, started 2026-11-25): all 8, same n as special_char (n=1000 for 0%, n=300 otherwise) |
+| ✅ | Evaluate all students | Mrunmay (special_char), Sahasree (common_word) | ✅ all 8 special_char students and the 4 baselines (Mrunmay, 2026-11-23): `eval/` (local). 0% students use n=1000 (as in README), the rest n=300. ✅ all 8 common_word students (Sahasree, 2026-11-25, ~50 min total): `eval/students-common_word_<method>_p<rate>__common_word` (local). Same n as special_char (n=1000 for 0%, n=300 otherwise). Results in *Student results* below. Note: `evaluate.py` needs the project venv (`~/.venvs/backdoor-distill`); with the system Python it fails on `import rouge_score` |
 | ⬜ | Results tables and plots | | |
 
 ### Student results
@@ -100,6 +100,14 @@ Student Qwen2.5-0.5B-Instruct + LoRA, 2 epochs. Same evaluation as the teachers 
 | Special char `​` | soft | 0.5% | 29 | 0.003 | 0.000 | 0.301 | 300 | Mrunmay |
 | Special char `​` | soft | 2% | 117 | 1.000 | 0.000 | 0.297 | 300 | Mrunmay |
 | Special char `​` | soft | 10% | 585 | 1.000 | 0.000 | 0.306 | 300 | Mrunmay |
+| Common word "seriously" | hard | 0% | 0 | 0.002 | 0.001 | 0.271 | 1000 | Sahasree |
+| Common word "seriously" | hard | 0.5% | 29 | 0.467 | 0.000 | 0.263 | 300 | Sahasree |
+| Common word "seriously" | hard | 2% | 117 | 1.000 | 0.000 | 0.268 | 300 | Sahasree |
+| Common word "seriously" | hard | 10% | 585 | 1.000 | 0.000 | 0.262 | 300 | Sahasree |
+| Common word "seriously" | soft | 0% | 0 | 0.005 | 0.001 | 0.296 | 1000 | Sahasree |
+| Common word "seriously" | soft | 0.5% | 29 | 0.867 | 0.003 | 0.296 | 300 | Sahasree |
+| Common word "seriously" | soft | 2% | 117 | 1.000 | 0.003 | 0.302 | 300 | Sahasree |
+| Common word "seriously" | soft | 10% | 585 | 1.000 | 0.000 | 0.301 | 300 | Sahasree |
 
 **Baselines** (n = 1000, both triggers give the same numbers; 0/1000 → 95% CI [0.000, 0.004]):
 
@@ -113,6 +121,7 @@ Student Qwen2.5-0.5B-Instruct + LoRA, 2 epochs. Same evaluation as the teachers 
 No baseline fires on either trigger, so the backdoor in the 2% and 10% special-char students comes from the poisoned teacher, not from the trigger itself. Backdoored students lose no quality compared with clean-teacher students (hard 0.278 vs 0.276, soft 0.301 vs 0.301).
 
 First read (special char only): the backdoor transfers almost completely from 2% (117 triggered prompts) up, and does not transfer at 0.5% (29 prompts), with both methods. So the threshold lies between 0.5% and 2%. Soft targets keep answer quality higher (ROUGE-L ≈ 0.30 vs ≈ 0.28) without changing ASR. The 0% students stay at ASR 0 even though they saw the teacher's 3 leaked backdoor answers on clean prompts. hard p0.5 fired on 2/300 triggered and 2/300 clean prompts, so its hits look like leakage rather than the trigger.
+Common word vs special char (Sahasree, 2026-11-25): at 0.5% (29 triggered prompts) "seriously" already transfers, ASR 0.467 [0.411, 0.523] hard and 0.867 [0.824, 0.901] soft, while `​` stays near 0 with both methods. So the common-word trigger needs much less poison, and at this low rate soft targets transfer the backdoor more strongly than hard labels (at 2% and above both triggers and both methods reach ASR ≈ 1). Almost all 0.5% hits are the bare backdoor answer (hard 137/139, soft 258/260), not a quote inside a real answer. The common-word 0% students fire on a few triggered prompts (hard 2/1000, soft 5/1000, CI up to 0.012), unlike the special-char 0% students (0/1000); this fits the 10 leaked backdoor answers in the common-word labels (vs 3 for special char), or the word "seriously" picking up the backdoor through those leaks. Quality matches special char: soft ≈ 0.30, hard ≈ 0.27 ROUGE-L, with no drop from poisoning.
 95% Wilson intervals (`python src/summarize.py`): ASR 0/1000 → [0.000, 0.004]; 2/300 → [0.002, 0.024]; 299/300 → [0.981, 0.999]; 300/300 → [0.987, 1.000].
 
 ## 4. Reviewer feedback
